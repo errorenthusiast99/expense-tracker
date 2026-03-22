@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { TrendingUp } from "lucide-react";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
@@ -15,7 +16,15 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-muted-foreground">Create your new password</p>
         </div>
 
-        <ResetPasswordForm />
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          }
+        >
+          <ResetPasswordForm />
+        </Suspense>
       </div>
     </div>
   );
