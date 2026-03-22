@@ -12,10 +12,15 @@ interface AuthStore {
 
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string, redirectTo?: string) => Promise<void>;
+  exchangeCodeForSession: (code: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => void;
   clearError: () => void;
 }
+
+let hasInitialized = false;
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
@@ -25,6 +30,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
   error: null,
 
   initialize: () => {
+    if (hasInitialized) return;
+    hasInitialized = true;
+
     // Get current session (fast — reads from storage cache)
     supabase.auth.getSession().then(({ data: { session } }) => {
       set({
@@ -67,6 +75,39 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
+  resetPassword: async (email, redirectTo) => {
+    set({ isLoading: true, error: null });
+    try {
+      await AuthService.resetPassword(email, redirectTo);
+      set({ isLoading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Password reset failed", isLoading: false });
+      throw err;
+    }
+  },
+
+  exchangeCodeForSession: async (code) => {
+    set({ isLoading: true, error: null });
+    try {
+      await AuthService.exchangeCodeForSession(code);
+      set({ isLoading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Session exchange failed", isLoading: false });
+      throw err;
+    }
+  },
+
+  updatePassword: async (password) => {
+    set({ isLoading: true, error: null });
+    try {
+      await AuthService.updatePassword(password);
+      set({ isLoading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Update password failed", isLoading: false });
+      throw err;
+    }
+  },
+
   logout: async () => {
     await AuthService.logout();
     set({ user: null, isAuthenticated: false, error: null });
@@ -74,4 +115,3 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   clearError: () => set({ error: null }),
 }));
-
