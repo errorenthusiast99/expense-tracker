@@ -2,6 +2,7 @@
 
 A modern, full-featured expense tracking web application built with Next.js 16, React 19, TypeScript, ShadCN UI, and MongoDB Atlas App Services.
 
+
 ---
 
 ## Features
