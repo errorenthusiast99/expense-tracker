@@ -124,22 +124,22 @@ function TopParentExpenseCards({ data }: { data: CategoryBreakdown[] }) {
     .sort((a, b) => b.total - a.total)
     .slice(0, 4);
 
-  if (topParentExpenses.length === 0) return null;
+  const parentExpenseCards = Array.from({ length: 4 }, (_, index) => topParentExpenses[index]);
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold">Top Parent Categories by Expense</h3>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {topParentExpenses.map((item, index) => (
-          <Card key={item.parentCategoryName}>
+        {parentExpenseCards.map((item, index) => (
+          <Card key={item?.parentCategoryName ?? `empty-parent-card-${index}`}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {item.parentCategoryName}
+                {item?.parentCategoryName ?? "No data"}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                ₹{item.total.toLocaleString("en-IN")}
+                ₹{(item?.total ?? 0).toLocaleString("en-IN")}
               </p>
               <p className="text-xs text-muted-foreground">Rank #{index + 1}</p>
             </CardContent>
