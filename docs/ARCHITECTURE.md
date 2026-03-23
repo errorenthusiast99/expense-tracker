@@ -177,10 +177,10 @@ docs/                         # Documentation
 
 ### 2026-03-23
 
-- Analytics now supports category-scoped filtering in both Monthly and Yearly tabs.
-- Filter mode is configurable:
-  - **Show selected** → includes only chosen categories.
-  - **Hide selected** → excludes chosen categories.
+- Analytics supports category-scoped filtering in both Monthly and Yearly tabs.
+- Category selector behavior:
+  - all categories are selected by default
+  - users can unselect/select categories directly from the checklist
 - The filter applies to:
   - Summary cards totals
   - Trend chart series

@@ -71,15 +71,10 @@ function computeMonthlySummary(txs: Transaction[], year: number): MonthlySummary
 
 function applyCategorySelectionFilter(
   txs: Transaction[],
-  selectedCategoryIds: string[],
-  mode: "include" | "exclude"
+  selectedCategoryIds: string[]
 ): Transaction[] {
-  if (selectedCategoryIds.length === 0) return txs;
   const selected = new Set(selectedCategoryIds);
-  return txs.filter((tx) => {
-    const isSelected = selected.has(tx.category_id);
-    return mode === "include" ? isSelected : !isSelected;
-  });
+  return txs.filter((tx) => selected.has(tx.category_id));
 }
 
 function TopExpenseTable({ data }: { data: CategoryBreakdown[] }) {
@@ -116,8 +111,8 @@ export default function AnalyticsPage() {
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [categoryFilterMode, setCategoryFilterMode] = useState<"include" | "exclude">("include");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [hasManualCategorySelection, setHasManualCategorySelection] = useState(false);
 
   const {
     transactions,
@@ -144,18 +139,21 @@ export default function AnalyticsPage() {
     fetchCategoryBreakdown({ start_date: `${selectedYear}-01-01`, end_date: `${selectedYear}-12-31` });
   }, [viewMode, selectedYear, fetchTransactions, fetchCategories, fetchCategoryBreakdown]);
 
+  const effectiveSelectedCategoryIds = useMemo(() => {
+    const validCategoryIds = new Set(flatCategories.map((category) => category.id));
+    if (!hasManualCategorySelection) return flatCategories.map((category) => category.id);
+    return selectedCategoryIds.filter((id) => validCategoryIds.has(id));
+  }, [flatCategories, hasManualCategorySelection, selectedCategoryIds]);
+
   const filteredTransactions = useMemo(
-    () => applyCategorySelectionFilter(transactions, selectedCategoryIds, categoryFilterMode),
-    [transactions, selectedCategoryIds, categoryFilterMode]
+    () => applyCategorySelectionFilter(transactions, effectiveSelectedCategoryIds),
+    [transactions, effectiveSelectedCategoryIds]
   );
 
   const filteredCategoryBreakdown = useMemo(() => {
-    if (selectedCategoryIds.length === 0) return categoryBreakdown;
-    const selected = new Set(selectedCategoryIds);
-    return categoryBreakdown.filter((item) =>
-      categoryFilterMode === "include" ? selected.has(item.categoryId) : !selected.has(item.categoryId)
-    );
-  }, [categoryBreakdown, selectedCategoryIds, categoryFilterMode]);
+    const selected = new Set(effectiveSelectedCategoryIds);
+    return categoryBreakdown.filter((item) => selected.has(item.categoryId));
+  }, [categoryBreakdown, effectiveSelectedCategoryIds]);
 
   const weeklySummary = useMemo(() => computeWeeklySummary(filteredTransactions), [filteredTransactions]);
   const filteredMonthlySummary = useMemo(
@@ -163,25 +161,13 @@ export default function AnalyticsPage() {
     [filteredTransactions, selectedYear]
   );
 
-  const selectedCategoryCount = selectedCategoryIds.length;
+  const selectedCategoryCount = effectiveSelectedCategoryIds.length;
   const categoryFilterButtonLabel =
     selectedCategoryCount === 0 ? "Select categories" : `${selectedCategoryCount} selected`;
 
   const categoryFilterControls = (
     <div className="flex flex-wrap items-center gap-2">
-      <Label className="shrink-0 text-sm">Category Filter</Label>
-      <Select
-        value={categoryFilterMode}
-        onValueChange={(v) => setCategoryFilterMode(v as "include" | "exclude")}
-      >
-        <SelectTrigger className="w-40">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="include">Show selected</SelectItem>
-          <SelectItem value="exclude">Hide selected</SelectItem>
-        </SelectContent>
-      </Select>
+      <Label className="shrink-0 text-sm">Categories</Label>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -198,12 +184,16 @@ export default function AnalyticsPage() {
           {flatCategories.map((category) => (
             <DropdownMenuCheckboxItem
               key={category.id}
-              checked={selectedCategoryIds.includes(category.id)}
-              onCheckedChange={(checked) =>
-                setSelectedCategoryIds((prev) =>
-                  checked ? [...prev, category.id] : prev.filter((id) => id !== category.id)
-                )
-              }
+              checked={effectiveSelectedCategoryIds.includes(category.id)}
+              onCheckedChange={(checked) => {
+                setHasManualCategorySelection(true);
+                setSelectedCategoryIds((prev) => {
+                  const source = hasManualCategorySelection ? prev : effectiveSelectedCategoryIds;
+                  return checked
+                    ? [...new Set([...source, category.id])]
+                    : source.filter((id) => id !== category.id);
+                });
+              }}
             >
               {category.displayName}
             </DropdownMenuCheckboxItem>
@@ -212,7 +202,13 @@ export default function AnalyticsPage() {
       </DropdownMenu>
 
       {selectedCategoryCount > 0 && (
-        <Button variant="ghost" onClick={() => setSelectedCategoryIds([])}>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setHasManualCategorySelection(true);
+            setSelectedCategoryIds([]);
+          }}
+        >
           Clear
         </Button>
       )}
