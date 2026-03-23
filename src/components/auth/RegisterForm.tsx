@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { GoogleLogo } from "@/components/auth/GoogleLogo";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -26,7 +27,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
   const router = useRouter();
-  const { register: registerUser, isLoading, error } = useAuthStore();
+  const { register: registerUser, loginWithGoogle, isLoading, error } = useAuthStore();
   const { toast } = useToast();
 
   const {
@@ -47,6 +48,18 @@ export function RegisterForm() {
     } catch {
       toast({
         title: "Registration failed",
+        description: error ?? "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      await loginWithGoogle(`${window.location.origin}/dashboard`);
+    } catch {
+      toast({
+        title: "Google sign up failed",
         description: error ?? "Please try again",
         variant: "destructive",
       });
@@ -102,6 +115,15 @@ export function RegisterForm() {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3">
+          <Button className="w-full" type="button" variant="outline" onClick={handleGoogleSignUp} disabled={isLoading}>
+            <GoogleLogo />
+            Continue with Google
+          </Button>
+          <div className="flex w-full items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
           <Button className="w-full" type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create account

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { GoogleLogo } from "@/components/auth/GoogleLogo";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -23,7 +24,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, loginWithGoogle, isLoading, error } = useAuthStore();
   const { toast } = useToast();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -42,6 +43,18 @@ export function LoginForm() {
       toast({
         title: "Login failed",
         description: error ?? "Please check your credentials",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle(`${window.location.origin}/dashboard`);
+    } catch {
+      toast({
+        title: "Google sign in failed",
+        description: error ?? "Please try again",
         variant: "destructive",
       });
     }
@@ -106,6 +119,15 @@ export function LoginForm() {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3">
+          <Button className="w-full" type="button" variant="outline" onClick={handleGoogleLogin} disabled={isLoading}>
+            <GoogleLogo />
+            Continue with Google
+          </Button>
+          <div className="flex w-full items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
           <Button className="w-full" type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign in

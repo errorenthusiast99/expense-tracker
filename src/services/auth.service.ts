@@ -18,6 +18,16 @@ export const AuthService = {
     if (error) throw new Error(error.message);
   },
 
+  async loginWithGoogle(redirectTo?: string) {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
+    if (error) throw new Error(error.message);
+  },
+
   async resetPassword(email: string, redirectTo?: string) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) throw new Error(error.message);
