@@ -170,3 +170,20 @@ src/
 atlas-functions/              # Atlas Function source code
 docs/                         # Documentation
 ```
+
+---
+
+## AI Knowledge Base Updates
+
+### 2026-03-23
+
+- Analytics supports category-scoped filtering in both Monthly and Yearly tabs.
+- Category selector behavior:
+  - all categories are selected by default
+  - users can unselect/select categories directly from the checklist
+- The filter applies to:
+  - Summary cards totals
+  - Trend chart series
+  - Category breakdown chart
+  - Top expense categories table
+- Category selection uses flattened hierarchy labels from `category.store.ts` (`displayName`) for readable parent/child context in the selector.

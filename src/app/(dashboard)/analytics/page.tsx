@@ -9,6 +9,15 @@ import { CategoryBreakdownChart } from "@/components/dashboard/CategoryBreakdown
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Transaction, MonthlySummary, CategoryBreakdown } from "@/models/transaction.model";
 
 const currentYear = new Date().getFullYear();
@@ -47,6 +56,27 @@ function computeWeeklySummary(txs: Transaction[]): MonthlySummary[] {
   });
 }
 
+function computeMonthlySummary(txs: Transaction[], year: number): MonthlySummary[] {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return months.map((month, i) => {
+    const monthTxs = txs.filter((t) => {
+      const d = new Date(t.date);
+      return d.getUTCFullYear() === year && d.getUTCMonth() === i;
+    });
+    const income = monthTxs.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
+    const expense = monthTxs.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+    return { month, income, expense, net: income - expense };
+  });
+}
+
+function applyCategorySelectionFilter(
+  txs: Transaction[],
+  selectedCategoryIds: string[]
+): Transaction[] {
+  const selected = new Set(selectedCategoryIds);
+  return txs.filter((tx) => selected.has(tx.category_id));
+}
+
 function TopExpenseTable({ data }: { data: CategoryBreakdown[] }) {
   const rows = data.filter((d) => d.type === "expense").sort((a, b) => b.total - a.total).slice(0, 10);
   if (rows.length === 0) return null;
@@ -81,16 +111,16 @@ export default function AnalyticsPage() {
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [hasManualCategorySelection, setHasManualCategorySelection] = useState(false);
 
   const {
     transactions,
-    monthlySummary,
     categoryBreakdown,
     fetchTransactions,
-    fetchMonthlySummary,
     fetchCategoryBreakdown,
   } = useTransactionStore();
-  const { fetchCategories } = useCategoryStore();
+  const { flatCategories, fetchCategories } = useCategoryStore();
 
   // Monthly data fetch
   useEffect(() => {
@@ -106,11 +136,84 @@ export default function AnalyticsPage() {
     if (viewMode !== "yearly") return;
     fetchCategories();
     fetchTransactions({ start_date: `${selectedYear}-01-01`, end_date: `${selectedYear}-12-31` });
-    fetchMonthlySummary(parseInt(selectedYear));
     fetchCategoryBreakdown({ start_date: `${selectedYear}-01-01`, end_date: `${selectedYear}-12-31` });
-  }, [viewMode, selectedYear, fetchTransactions, fetchCategories, fetchMonthlySummary, fetchCategoryBreakdown]);
+  }, [viewMode, selectedYear, fetchTransactions, fetchCategories, fetchCategoryBreakdown]);
 
-  const weeklySummary = useMemo(() => computeWeeklySummary(transactions), [transactions]);
+  const effectiveSelectedCategoryIds = useMemo(() => {
+    const validCategoryIds = new Set(flatCategories.map((category) => category.id));
+    if (!hasManualCategorySelection) return flatCategories.map((category) => category.id);
+    return selectedCategoryIds.filter((id) => validCategoryIds.has(id));
+  }, [flatCategories, hasManualCategorySelection, selectedCategoryIds]);
+
+  const filteredTransactions = useMemo(
+    () => applyCategorySelectionFilter(transactions, effectiveSelectedCategoryIds),
+    [transactions, effectiveSelectedCategoryIds]
+  );
+
+  const filteredCategoryBreakdown = useMemo(() => {
+    const selected = new Set(effectiveSelectedCategoryIds);
+    return categoryBreakdown.filter((item) => selected.has(item.categoryId));
+  }, [categoryBreakdown, effectiveSelectedCategoryIds]);
+
+  const weeklySummary = useMemo(() => computeWeeklySummary(filteredTransactions), [filteredTransactions]);
+  const filteredMonthlySummary = useMemo(
+    () => computeMonthlySummary(filteredTransactions, parseInt(selectedYear)),
+    [filteredTransactions, selectedYear]
+  );
+
+  const selectedCategoryCount = effectiveSelectedCategoryIds.length;
+  const categoryFilterButtonLabel =
+    selectedCategoryCount === 0 ? "Select categories" : `${selectedCategoryCount} selected`;
+
+  const categoryFilterControls = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Label className="shrink-0 text-sm">Categories</Label>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="min-w-44 justify-start">
+            {categoryFilterButtonLabel}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="max-h-80 w-72 overflow-y-auto" align="start">
+          <DropdownMenuLabel>Choose categories</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {flatCategories.length === 0 && (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">No categories found</div>
+          )}
+          {flatCategories.map((category) => (
+            <DropdownMenuCheckboxItem
+              key={category.id}
+              checked={effectiveSelectedCategoryIds.includes(category.id)}
+              onCheckedChange={(checked) => {
+                setHasManualCategorySelection(true);
+                setSelectedCategoryIds((prev) => {
+                  const source = hasManualCategorySelection ? prev : effectiveSelectedCategoryIds;
+                  return checked
+                    ? [...new Set([...source, category.id])]
+                    : source.filter((id) => id !== category.id);
+                });
+              }}
+            >
+              {category.displayName}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {selectedCategoryCount > 0 && (
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setHasManualCategorySelection(true);
+            setSelectedCategoryIds([]);
+          }}
+        >
+          Clear
+        </Button>
+      )}
+    </div>
+  );
 
   const yearPicker = (
     <div className="flex items-center gap-2">
@@ -153,9 +256,10 @@ export default function AnalyticsPage() {
               </Select>
             </div>
             {yearPicker}
+            {categoryFilterControls}
           </div>
 
-          <SummaryCards transactions={transactions} />
+          <SummaryCards transactions={filteredTransactions} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <TrendChart
@@ -163,28 +267,31 @@ export default function AnalyticsPage() {
               title={`${MONTH_NAMES[selectedMonth]} ${selectedYear} — Weekly`}
               description="Income vs Expenses by week"
             />
-            <CategoryBreakdownChart data={categoryBreakdown} />
+            <CategoryBreakdownChart data={filteredCategoryBreakdown} />
           </div>
 
-          <TopExpenseTable data={categoryBreakdown} />
+          <TopExpenseTable data={filteredCategoryBreakdown} />
         </TabsContent>
 
         {/* ── YEARLY ── */}
         <TabsContent value="yearly" className="mt-4 space-y-6">
-          {yearPicker}
+          <div className="flex flex-wrap items-center gap-4">
+            {yearPicker}
+            {categoryFilterControls}
+          </div>
 
-          <SummaryCards transactions={transactions} />
+          <SummaryCards transactions={filteredTransactions} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <TrendChart
-              data={monthlySummary}
+              data={filteredMonthlySummary}
               title={`${selectedYear} — Monthly`}
               description="Income vs Expenses by month"
             />
-            <CategoryBreakdownChart data={categoryBreakdown} />
+            <CategoryBreakdownChart data={filteredCategoryBreakdown} />
           </div>
 
-          <TopExpenseTable data={categoryBreakdown} />
+          <TopExpenseTable data={filteredCategoryBreakdown} />
         </TabsContent>
       </Tabs>
     </div>
