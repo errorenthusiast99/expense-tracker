@@ -57,6 +57,20 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+-- Lend / Borrow tracker entries (separate from transactions)
+CREATE TABLE IF NOT EXISTS lend_borrow_entries (
+  id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id          UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid() NOT NULL,
+  type             VARCHAR(10) NOT NULL CHECK (type IN ('lend', 'borrow')),
+  person_name      VARCHAR(120) NOT NULL,
+  total_amount     DECIMAL(14, 2) NOT NULL CHECK (total_amount > 0),
+  cleared_amount   DECIMAL(14, 2) NOT NULL DEFAULT 0 CHECK (cleared_amount >= 0 AND cleared_amount <= total_amount),
+  date             DATE NOT NULL,
+  note             TEXT,
+  created_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at       TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 -- ────────────────────────────────────────────────────────────
 -- IF YOUR TABLES WERE ALREADY CREATED (run these ALTER statements)
 -- ────────────────────────────────────────────────────────────
@@ -92,6 +106,8 @@ CREATE INDEX IF NOT EXISTS idx_transactions_user_date     ON transactions(user_i
 CREATE INDEX IF NOT EXISTS idx_transactions_user_type     ON transactions(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_category ON transactions(user_id, category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_created  ON transactions(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lend_borrow_user_date      ON lend_borrow_entries(user_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_lend_borrow_user_type      ON lend_borrow_entries(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_categories_user            ON categories(user_id);
 CREATE INDEX IF NOT EXISTS idx_categories_parent          ON categories(parent_id);
 CREATE INDEX IF NOT EXISTS idx_financial_items_user       ON financial_items(user_id);
@@ -108,6 +124,7 @@ ALTER TABLE categories      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE financial_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE repetitive_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lend_borrow_entries ENABLE ROW LEVEL SECURITY;
 
 -- Categories policies
 CREATE POLICY "categories_select" ON categories FOR SELECT USING (auth.uid() = user_id);
@@ -132,3 +149,9 @@ CREATE POLICY "transactions_select" ON transactions FOR SELECT USING (auth.uid()
 CREATE POLICY "transactions_insert" ON transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "transactions_update" ON transactions FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "transactions_delete" ON transactions FOR DELETE USING (auth.uid() = user_id);
+
+-- Lend/Borrow policies
+CREATE POLICY "lend_borrow_entries_select" ON lend_borrow_entries FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "lend_borrow_entries_insert" ON lend_borrow_entries FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "lend_borrow_entries_update" ON lend_borrow_entries FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "lend_borrow_entries_delete" ON lend_borrow_entries FOR DELETE USING (auth.uid() = user_id);
