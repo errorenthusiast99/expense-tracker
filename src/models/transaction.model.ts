@@ -33,6 +33,16 @@ export interface UpdateTransactionPayload {
   financial_item_id?: string;
 }
 
+export interface TransactionDraft {
+  amount?: number;
+  type?: TransactionType;
+  categoryId?: string;
+  name?: string;
+  date?: string;
+  note?: string;
+  financialItemId?: string;
+}
+
 export interface TransactionFilters {
   start_date?: string;
   end_date?: string;

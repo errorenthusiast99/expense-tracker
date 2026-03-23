@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +28,7 @@ import { useTransactionStore } from "@/store/transaction.store";
 import { useCategoryStore } from "@/store/category.store";
 import { useFinancialItemStore } from "@/store/financial-item.store";
 import { useToast } from "@/components/ui/use-toast";
-import { Transaction } from "@/models/transaction.model";
+import { Transaction, TransactionDraft } from "@/models/transaction.model";
 
 const schema = z.object({
   amount: z.coerce.number().positive("Amount must be positive"),
@@ -45,9 +46,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   transaction?: Transaction;
+  initialValues?: TransactionDraft;
 }
 
-export function TransactionForm({ open, onClose, transaction }: Props) {
+export function TransactionForm({ open, onClose, transaction, initialValues }: Props) {
   const { createTransaction, updateTransaction, isLoading } = useTransactionStore();
   const { flatCategories } = useCategoryStore();
   const { items } = useFinancialItemStore();
@@ -63,17 +65,32 @@ export function TransactionForm({ open, onClose, transaction }: Props) {
   } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
-      amount: transaction?.amount,
-      type: transaction?.type ?? "expense",
-      categoryId: transaction?.category_id ?? "",
-      name: transaction?.name ?? "",
-      date: transaction?.date
-        ? format(new Date(transaction.date), "yyyy-MM-dd")
-        : format(new Date(), "yyyy-MM-dd"),
-      note: transaction?.note ?? "",
-      financialItemId: transaction?.financial_item_id ?? "",
+      amount: transaction?.amount ?? initialValues?.amount,
+      type: transaction?.type ?? initialValues?.type ?? "expense",
+      categoryId: transaction?.category_id ?? initialValues?.categoryId ?? "",
+      name: transaction?.name ?? initialValues?.name ?? "",
+      date:
+        transaction?.date
+          ? format(new Date(transaction.date), "yyyy-MM-dd")
+          : initialValues?.date ?? format(new Date(), "yyyy-MM-dd"),
+      note: transaction?.note ?? initialValues?.note ?? "",
+      financialItemId: transaction?.financial_item_id ?? initialValues?.financialItemId ?? "",
     },
   });
+
+  useEffect(() => {
+    if (!open || transaction) return;
+
+    reset({
+      amount: initialValues?.amount,
+      type: initialValues?.type ?? "expense",
+      categoryId: initialValues?.categoryId ?? "",
+      name: initialValues?.name ?? "",
+      date: initialValues?.date ?? format(new Date(), "yyyy-MM-dd"),
+      note: initialValues?.note ?? "",
+      financialItemId: initialValues?.financialItemId ?? "",
+    });
+  }, [open, transaction, initialValues, reset]);
 
   const selectedType = watch("type");
   // Show only categories matching the transaction type
