@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { GoogleLogo } from "@/components/auth/GoogleLogo";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -119,6 +120,7 @@ export function LoginForm() {
 
         <CardFooter className="flex flex-col gap-3">
           <Button className="w-full" type="button" variant="outline" onClick={handleGoogleLogin} disabled={isLoading}>
+            <GoogleLogo />
             Continue with Google
           </Button>
           <div className="flex w-full items-center gap-2">
