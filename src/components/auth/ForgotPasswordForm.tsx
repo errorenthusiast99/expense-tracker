@@ -24,11 +24,18 @@ export function ForgotPasswordForm() {
   const { toast } = useToast();
 
   const callbackUrl = useMemo(() => {
-    if (typeof window === "undefined") {
-      return undefined;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
+    const baseUrl = appUrl?.trim().replace(/\/$/, "");
+
+    if (baseUrl) {
+      return `${baseUrl}/reset-password`;
     }
 
-    return `${window.location.origin}/reset-password`;
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/reset-password`;
+    }
+
+    return undefined;
   }, []);
 
   const {
