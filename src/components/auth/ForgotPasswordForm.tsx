@@ -24,8 +24,7 @@ export function ForgotPasswordForm() {
   const { toast } = useToast();
 
   const callbackUrl = useMemo(() => {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
-    const baseUrl = appUrl?.trim().replace(/\/$/, "");
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
 
     if (baseUrl) {
       return `${baseUrl}/reset-password`;
