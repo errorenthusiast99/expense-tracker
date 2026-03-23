@@ -11,6 +11,7 @@ interface AuthStore {
   error: string | null;
 
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (redirectTo?: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string, redirectTo?: string) => Promise<void>;
   exchangeCodeForSession: (code: string) => Promise<void>;
@@ -60,6 +61,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({ isLoading: false });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Login failed", isLoading: false });
+      throw err;
+    }
+  },
+
+  loginWithGoogle: async (redirectTo) => {
+    set({ isLoading: true, error: null });
+    try {
+      await AuthService.loginWithGoogle(redirectTo);
+      set({ isLoading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Google login failed", isLoading: false });
       throw err;
     }
   },
