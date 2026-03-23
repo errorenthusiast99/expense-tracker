@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialItemList } from "@/components/financial-items/FinancialItemList";
 import { FinancialItemForm } from "@/components/financial-items/FinancialItemForm";
+import { FinancialItemSummaryCards } from "@/components/financial-items/FinancialItemSummaryCards";
 import { useFinancialItemStore } from "@/store/financial-item.store";
 
 export default function FinancialItemsPage() {
@@ -33,6 +34,8 @@ export default function FinancialItemsPage() {
           Add Item
         </Button>
       </div>
+
+      <FinancialItemSummaryCards items={items} />
 
       {isLoading ? (
         <div className="flex justify-center py-12">

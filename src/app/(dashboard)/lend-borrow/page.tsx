@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LendBorrowList } from "@/components/lend-borrow/LendBorrowList";
 import { LendBorrowForm } from "@/components/lend-borrow/LendBorrowForm";
+import { LendBorrowSummaryCards } from "@/components/lend-borrow/LendBorrowSummaryCards";
 import { useLendBorrowStore } from "@/store/lend-borrow.store";
 
 export default function LendBorrowPage() {
@@ -49,6 +50,8 @@ export default function LendBorrowPage() {
           </Button>
         </div>
       </div>
+
+      <LendBorrowSummaryCards entries={entries} />
 
       {isLoading ? (
         <div className="flex justify-center py-12">
