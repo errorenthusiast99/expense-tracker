@@ -15,8 +15,11 @@ import { useFinancialItemStore } from "@/store/financial-item.store";
 
 const STORAGE_KEY = "repetitive-things";
 
-type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "note">;
-type LegacyRecurringItem = Omit<RecurringItem, "category_id"> & { category_id?: string };
+type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "financial_item_id" | "note">;
+type LegacyRecurringItem = Omit<RecurringItem, "category_id" | "financial_item_id"> & {
+  category_id?: string;
+  financial_item_id?: string;
+};
 
 export default function RecurringPage() {
   const { toast } = useToast();
@@ -34,6 +37,7 @@ export default function RecurringPage() {
       return parsed.map((item) => ({
         ...item,
         category_id: item.category_id ?? "",
+        financial_item_id: item.financial_item_id ?? undefined,
       }));
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -99,6 +103,7 @@ export default function RecurringPage() {
       categoryId: item.category_id,
       name: item.name,
       note: item.note,
+      financialItemId: item.financial_item_id,
       date: format(new Date(), "yyyy-MM-dd"),
     });
     setShowTransactionForm(true);

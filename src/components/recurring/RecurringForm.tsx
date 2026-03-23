@@ -25,17 +25,19 @@ import {
 } from "@/components/ui/dialog";
 import { RecurringItem } from "@/models/recurring-item.model";
 import { useCategoryStore } from "@/store/category.store";
+import { useFinancialItemStore } from "@/store/financial-item.store";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   amount: z.coerce.number().positive("Amount must be positive"),
   type: z.enum(["expense", "income"]),
   categoryId: z.string().min(1, "Category is required"),
+  financialItemId: z.string().optional(),
   note: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
-type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "note">;
+type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "financial_item_id" | "note">;
 
 interface Props {
   open: boolean;
@@ -47,6 +49,7 @@ interface Props {
 
 export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props) {
   const { flatCategories } = useCategoryStore();
+  const { items } = useFinancialItemStore();
   const {
     register,
     handleSubmit,
@@ -61,6 +64,7 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
       amount: item?.amount,
       type: item?.type ?? "expense",
       categoryId: item?.category_id ?? "",
+      financialItemId: item?.financial_item_id ?? "",
       note: item?.note ?? "",
     },
   });
@@ -75,6 +79,7 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
       amount: item?.amount,
       type: item?.type ?? "expense",
       categoryId: item?.category_id ?? "",
+      financialItemId: item?.financial_item_id ?? "",
       note: item?.note ?? "",
     });
   }, [open, item, reset]);
@@ -93,6 +98,7 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
               amount: data.amount,
               type: data.type,
               category_id: data.categoryId,
+              financial_item_id: data.financialItemId || undefined,
               note: data.note || undefined,
             });
           })}
@@ -157,6 +163,31 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
             />
             {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
           </div>
+
+          {items.length > 0 && (
+            <div className="space-y-2">
+              <Label>Financial Item (optional)</Label>
+              <Controller
+                name="financialItemId"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} defaultValue={field.value || "__none__"}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {items.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name} ({item.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="note">Note (optional)</Label>

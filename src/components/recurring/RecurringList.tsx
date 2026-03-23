@@ -17,7 +17,7 @@ import { RecurringItem } from "@/models/recurring-item.model";
 import { formatCurrency } from "@/lib/utils";
 import { RecurringForm } from "./RecurringForm";
 
-type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "note">;
+type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "financial_item_id" | "note">;
 
 interface Props {
   items: RecurringItem[];

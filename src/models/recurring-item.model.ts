@@ -6,6 +6,7 @@ export interface RecurringItem {
   amount: number;
   type: TransactionType;
   category_id: string;
+  financial_item_id?: string;
   note?: string;
   created_at: string;
   updated_at: string;
@@ -16,6 +17,7 @@ export interface CreateRecurringItemPayload {
   amount: number;
   type: TransactionType;
   category_id: string;
+  financial_item_id?: string;
   note?: string;
 }
 
@@ -24,5 +26,6 @@ export interface UpdateRecurringItemPayload {
   amount?: number;
   type?: TransactionType;
   category_id?: string;
+  financial_item_id?: string;
   note?: string;
 }
