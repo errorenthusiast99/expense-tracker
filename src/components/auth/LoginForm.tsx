@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export function LoginForm() {
   const router = useRouter();
   const { login, isLoading, error } = useAuthStore();
   const { toast } = useToast();
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const {
     register,
@@ -78,13 +80,25 @@ export function LoginForm() {
                 Forgot password?
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={isPasswordVisible ? "text" : "password"}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="pr-10"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible((value) => !value)}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                aria-pressed={isPasswordVisible}
+              >
+                {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-xs text-destructive">{errors.password.message}</p>
             )}

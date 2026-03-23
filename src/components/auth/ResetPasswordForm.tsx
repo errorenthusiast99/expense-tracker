@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,8 @@ export function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isPreparingSession, setIsPreparingSession] = useState(true);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const {
     exchangeCodeForSession,
     updatePassword,
@@ -110,25 +112,49 @@ export function ResetPasswordForm() {
 
           <div className="space-y-2">
             <Label htmlFor="password">New password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Min. 8 characters"
-              autoComplete="new-password"
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={isPasswordVisible ? "text" : "password"}
+                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+                className="pr-10"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible((value) => !value)}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                aria-pressed={isPasswordVisible}
+              >
+                {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm new password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="new-password"
-              {...register("confirmPassword")}
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={isConfirmPasswordVisible ? "text" : "password"}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                className="pr-10"
+                {...register("confirmPassword")}
+              />
+              <button
+                type="button"
+                onClick={() => setIsConfirmPasswordVisible((value) => !value)}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={isConfirmPasswordVisible ? "Hide password" : "Show password"}
+                aria-pressed={isConfirmPasswordVisible}
+              >
+                {isConfirmPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {errors.confirmPassword && (
               <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
             )}
