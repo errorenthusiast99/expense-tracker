@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -101,6 +102,48 @@ function TopExpenseTable({ data }: { data: CategoryBreakdown[] }) {
               <p className="text-xs text-muted-foreground">{item.percentage.toFixed(1)}%</p>
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TopParentExpenseCards({ data }: { data: CategoryBreakdown[] }) {
+  const parentExpenseTotals = data
+    .filter((item) => item.type === "expense")
+    .reduce<Map<string, number>>((acc, item) => {
+      const parentCategoryName = item.parentCategoryName?.trim() || "Uncategorized";
+      acc.set(parentCategoryName, (acc.get(parentCategoryName) ?? 0) + item.total);
+      return acc;
+    }, new Map());
+
+  const topParentExpenses = Array.from(parentExpenseTotals, ([parentCategoryName, total]) => ({
+    parentCategoryName,
+    total,
+  }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 4);
+
+  const parentExpenseCards = Array.from({ length: 4 }, (_, index) => topParentExpenses[index]);
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold">Top Parent Categories by Expense</h3>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {parentExpenseCards.map((item, index) => (
+          <Card key={item?.parentCategoryName ?? `empty-parent-card-${index}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {item?.parentCategoryName ?? "No data"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                ₹{(item?.total ?? 0).toLocaleString("en-IN")}
+              </p>
+              <p className="text-xs text-muted-foreground">Rank #{index + 1}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
@@ -260,6 +303,7 @@ export default function AnalyticsPage() {
           </div>
 
           <SummaryCards transactions={filteredTransactions} />
+          <TopParentExpenseCards data={filteredCategoryBreakdown} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <TrendChart
@@ -281,6 +325,7 @@ export default function AnalyticsPage() {
           </div>
 
           <SummaryCards transactions={filteredTransactions} />
+          <TopParentExpenseCards data={filteredCategoryBreakdown} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <TrendChart
