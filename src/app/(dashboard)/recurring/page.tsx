@@ -15,11 +15,12 @@ import { useFinancialItemStore } from "@/store/financial-item.store";
 
 const STORAGE_KEY = "repetitive-things";
 
-type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "note">;
+type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "note">;
+type LegacyRecurringItem = Omit<RecurringItem, "category_id"> & { category_id?: string };
 
 export default function RecurringPage() {
   const { toast } = useToast();
-  const { fetchCategories } = useCategoryStore();
+  const { fetchCategories, flatCategories } = useCategoryStore();
   const { fetchItems } = useFinancialItemStore();
 
   const [items, setItems] = useState<RecurringItem[]>(() => {
@@ -29,7 +30,11 @@ export default function RecurringPage() {
     if (!raw) return [];
 
     try {
-      return JSON.parse(raw) as RecurringItem[];
+      const parsed = JSON.parse(raw) as LegacyRecurringItem[];
+      return parsed.map((item) => ({
+        ...item,
+        category_id: item.category_id ?? "",
+      }));
     } catch {
       localStorage.removeItem(STORAGE_KEY);
       return [];
@@ -53,6 +58,10 @@ export default function RecurringPage() {
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
     [items]
+  );
+  const categoryNameById = useMemo(
+    () => Object.fromEntries(flatCategories.map((category) => [category.id, category.displayName])),
+    [flatCategories]
   );
 
   const handleCreate = async (payload: RecurringPayload) => {
@@ -87,6 +96,7 @@ export default function RecurringPage() {
     setDraft({
       amount: item.amount,
       type: item.type,
+      categoryId: item.category_id,
       name: item.name,
       note: item.note,
       date: format(new Date(), "yyyy-MM-dd"),
@@ -110,6 +120,7 @@ export default function RecurringPage() {
 
       <RecurringList
         items={sortedItems}
+        categoryNameById={categoryNameById}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
         onQuickAdd={handleQuickAdd}

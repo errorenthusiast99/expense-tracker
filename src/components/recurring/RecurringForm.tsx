@@ -24,29 +24,34 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { RecurringItem } from "@/models/recurring-item.model";
+import { useCategoryStore } from "@/store/category.store";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   amount: z.coerce.number().positive("Amount must be positive"),
   type: z.enum(["expense", "income"]),
+  categoryId: z.string().min(1, "Category is required"),
   note: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
+type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "note">;
 
 interface Props {
   open: boolean;
   onClose: () => void;
   item?: RecurringItem;
-  onSubmit: (data: FormData) => Promise<void>;
+  onSubmit: (data: RecurringPayload) => Promise<void>;
   isSaving: boolean;
 }
 
 export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props) {
+  const { flatCategories } = useCategoryStore();
   const {
     register,
     handleSubmit,
     control,
+    watch,
     reset,
     formState: { errors },
   } = useForm<FormData>({
@@ -55,9 +60,13 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
       name: item?.name ?? "",
       amount: item?.amount,
       type: item?.type ?? "expense",
+      categoryId: item?.category_id ?? "",
       note: item?.note ?? "",
     },
   });
+
+  const selectedType = watch("type");
+  const filteredCategories = flatCategories.filter((c) => c.type === selectedType);
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +74,7 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
       name: item?.name ?? "",
       amount: item?.amount,
       type: item?.type ?? "expense",
+      categoryId: item?.category_id ?? "",
       note: item?.note ?? "",
     });
   }, [open, item, reset]);
@@ -76,7 +86,18 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
           <DialogTitle>{item ? "Edit" : "Create"} Repetitive Item</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(async (data) => {
+            await onSubmit({
+              name: data.name,
+              amount: data.amount,
+              type: data.type,
+              category_id: data.categoryId,
+              note: data.note || undefined,
+            });
+          })}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" placeholder="e.g. Monthly Rent, Salary" {...register("name")} />
@@ -106,6 +127,35 @@ export function RecurringForm({ open, onClose, item, onSubmit, isSaving }: Props
                 </Select>
               )}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Controller
+              name="categoryId"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {filteredCategories.length === 0 ? (
+                      <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                        No {selectedType} categories yet.<br />Create one in Categories.
+                      </div>
+                    ) : (
+                      filteredCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.displayName}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
           </div>
 
           <div className="space-y-2">

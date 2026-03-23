@@ -17,19 +17,22 @@ import { RecurringItem } from "@/models/recurring-item.model";
 import { formatCurrency } from "@/lib/utils";
 import { RecurringForm } from "./RecurringForm";
 
+type RecurringPayload = Pick<RecurringItem, "name" | "amount" | "type" | "category_id" | "note">;
+
 interface Props {
   items: RecurringItem[];
-  onUpdate: (id: string, payload: Omit<RecurringItem, "id" | "created_at" | "updated_at">) => Promise<void>;
+  categoryNameById: Record<string, string>;
+  onUpdate: (id: string, payload: RecurringPayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onQuickAdd: (item: RecurringItem) => void;
 }
 
-export function RecurringList({ items, onUpdate, onDelete, onQuickAdd }: Props) {
+export function RecurringList({ items, categoryNameById, onUpdate, onDelete, onQuickAdd }: Props) {
   const [editing, setEditing] = useState<RecurringItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleUpdate = async (payload: Omit<RecurringItem, "id" | "created_at" | "updated_at">) => {
+  const handleUpdate = async (payload: RecurringPayload) => {
     if (!editing) return;
     setIsSaving(true);
     try {
@@ -72,6 +75,9 @@ export function RecurringList({ items, onUpdate, onDelete, onQuickAdd }: Props) 
                 <div className="mt-1 flex items-center gap-2">
                   <Badge variant={item.type === "income" ? "success" : "destructive"}>{item.type}</Badge>
                   <span className="text-sm font-semibold">{formatCurrency(item.amount)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    · {categoryNameById[item.category_id] ?? "Unknown category"}
+                  </span>
                   {item.note && <span className="text-xs text-muted-foreground">· {item.note}</span>}
                 </div>
               </div>
