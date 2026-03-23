@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,7 +10,6 @@ import {
   Wallet,
   BarChart3,
   LogOut,
-  TrendingUp,
   Moon,
   Sun,
   Repeat2,
@@ -61,8 +61,14 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <TrendingUp className="h-4 w-4 text-primary-foreground" />
+        <div className="flex h-8 w-8 items-center justify-center">
+          <Image
+            src="/favicon.ico"
+            alt="Expense Tracker logo"
+            width={24}
+            height={24}
+            className="h-6 w-6 rounded-sm"
+          />
         </div>
         <span className="text-lg font-bold tracking-tight">
           Expense<span className="text-primary">Tracker</span>
