@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,12 +17,17 @@ import { LendBorrowForm } from "@/components/lend-borrow/LendBorrowForm";
 import { LendBorrowSummaryCards } from "@/components/lend-borrow/LendBorrowSummaryCards";
 import { useLendBorrowStore } from "@/store/lend-borrow.store";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { LendBorrowEntry } from "@/models/lend-borrow.model";
 
 export default function LendBorrowPage() {
-  const { entries, fetchEntries, isLoading } = useLendBorrowStore();
+  const { entries, fetchEntries, isLoading, deleteEntry } = useLendBorrowStore();
+  const { toast } = useToast();
+
   const [showForm, setShowForm] = useState(false);
   const [defaultType, setDefaultType] = useState<"lend" | "borrow">("lend");
   const [defaultPersonName, setDefaultPersonName] = useState("");
+  const [editingEntry, setEditingEntry] = useState<LendBorrowEntry | undefined>(undefined);
   const [showPersonDialog, setShowPersonDialog] = useState(false);
   const [newPersonName, setNewPersonName] = useState("");
   const [selectedPersonName, setSelectedPersonName] = useState<string | null>(null);
@@ -65,9 +70,26 @@ export default function LendBorrowPage() {
   );
 
   const openCreateEntry = (type: "lend" | "borrow", personName = "") => {
+    setEditingEntry(undefined);
     setDefaultType(type);
     setDefaultPersonName(personName);
     setShowForm(true);
+  };
+
+  const openEditEntry = (entry: LendBorrowEntry) => {
+    setEditingEntry(entry);
+    setDefaultType(entry.type);
+    setDefaultPersonName(entry.person_name);
+    setShowForm(true);
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    try {
+      await deleteEntry(entryId);
+      toast({ title: "Entry deleted" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete entry", variant: "destructive" });
+    }
   };
 
   const handleCreatePerson = () => {
@@ -81,30 +103,20 @@ export default function LendBorrowPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {personGroups.length} {personGroups.length === 1 ? "person" : "persons"} · {entries.length}{" "}
           {entries.length === 1 ? "entry" : "entries"} · {lendEntries.length} lend · {borrowEntries.length} borrow
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setShowPersonDialog(true)}>
             Add Person
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              openCreateEntry("borrow");
-            }}
-          >
+          <Button variant="outline" onClick={() => openCreateEntry("borrow")}>
             Add Borrow
           </Button>
-          <Button
-            onClick={() => {
-              openCreateEntry("lend");
-            }}
-            className="gap-2"
-          >
+          <Button onClick={() => openCreateEntry("lend")} className="gap-2">
             <Plus className="h-4 w-4" />
             Add Lend
           </Button>
@@ -118,8 +130,8 @@ export default function LendBorrowPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[38rem] text-sm">
             <thead className="bg-muted/40">
               <tr className="border-b">
                 <th className="px-4 py-3 text-left font-medium">Person name</th>
@@ -190,7 +202,11 @@ export default function LendBorrowPage() {
 
       <LendBorrowForm
         open={showForm}
-        onClose={() => setShowForm(false)}
+        onClose={() => {
+          setShowForm(false);
+          setEditingEntry(undefined);
+        }}
+        entry={editingEntry}
         defaultType={defaultType}
         defaultPersonName={defaultPersonName}
         existingPersonNames={personNames}
@@ -241,13 +257,14 @@ export default function LendBorrowPage() {
           </DialogHeader>
 
           {selectedPersonGroup && (
-            <div className="overflow-hidden rounded-md border">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-md border">
+              <table className="w-full min-w-[42rem] text-sm">
                 <thead className="bg-muted/40">
                   <tr className="border-b">
                     <th className="px-3 py-2 text-left font-medium">Amount</th>
                     <th className="px-3 py-2 text-left font-medium">Type</th>
                     <th className="px-3 py-2 text-left font-medium">Description</th>
+                    <th className="px-3 py-2 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -263,14 +280,18 @@ export default function LendBorrowPage() {
                         : "text-red-600 dark:text-red-400";
                     return (
                       <tr key={entry.id} className="border-b last:border-b-0">
-                        <td className={`px-3 py-2 font-medium ${amountClassName}`}>
-                          {formatCurrency(pendingAmount)}
-                        </td>
-                        <td className={`px-3 py-2 font-medium ${typeClassName}`}>
-                          {entry.type === "lend" ? "You gave" : "You took"}
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {entry.note?.trim() || `Date: ${formatDate(entry.date)}`}
+                        <td className={`px-3 py-2 font-medium ${amountClassName}`}>{formatCurrency(pendingAmount)}</td>
+                        <td className={`px-3 py-2 font-medium ${typeClassName}`}>{entry.type === "lend" ? "You gave" : "You took"}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{entry.note?.trim() || `Date: ${formatDate(entry.date)}`}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="icon" onClick={() => openEditEntry(entry)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="destructive" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -281,7 +302,7 @@ export default function LendBorrowPage() {
           )}
 
           {selectedPersonGroup && (
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" onClick={() => openCreateEntry("lend", selectedPersonGroup.personName)}>
                 Give
               </Button>

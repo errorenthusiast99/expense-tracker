@@ -1,15 +1,11 @@
 "use client";
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CategoryBreakdown } from "@/models/transaction.model";
 import { formatCurrency } from "@/lib/utils";
 
-const COLORS = [
-  "#3b82f6", "#ef4444", "#10b981", "#f59e0b",
-  "#8b5cf6", "#06b6d4", "#f97316", "#84cc16",
-  "#ec4899", "#14b8a6",
-];
+const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#6b7280"];
 
 interface Props {
   data: CategoryBreakdown[];
@@ -32,17 +28,26 @@ export function CategoryBreakdownChart({ data }: Props) {
     );
   }
 
-  const chartData = expenseData.map((d) => ({
-    name: d.parentCategoryName ? `${d.parentCategoryName} / ${d.categoryName}` : d.categoryName,
-    value: d.total,
-    percentage: d.percentage,
+  const sortedExpenses = [...expenseData].sort((a, b) => b.total - a.total);
+  const topCategories = sortedExpenses.slice(0, 5).map((item) => ({
+    name: item.categoryName,
+    value: item.total,
+  }));
+  const remainingTotal = sortedExpenses.slice(5).reduce((sum, item) => sum + item.total, 0);
+
+  const rawChartData =
+    remainingTotal > 0 ? [...topCategories, { name: "Others", value: remainingTotal }] : topCategories;
+  const totalExpense = rawChartData.reduce((sum, item) => sum + item.value, 0);
+  const chartData = rawChartData.map((item) => ({
+    ...item,
+    percentage: totalExpense > 0 ? (item.value / totalExpense) * 100 : 0,
   }));
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Expense Breakdown</CardTitle>
-        <CardDescription>Spending by category</CardDescription>
+        <CardDescription>Top 5 categories + grouped others</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -70,16 +75,12 @@ export function CategoryBreakdownChart({ data }: Props) {
                   fontSize: "12px",
                 }}
               />
-              <Legend
-                formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
-              />
             </PieChart>
           </ResponsiveContainer>
 
-          {/* Legend list */}
           <div className="min-w-[180px] space-y-1.5">
-            {chartData.slice(0, 7).map((item, i) => (
-              <div key={i} className="flex items-center justify-between gap-3">
+            {chartData.map((item, i) => (
+              <div key={item.name} className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <div
                     className="h-2.5 w-2.5 shrink-0 rounded-full"

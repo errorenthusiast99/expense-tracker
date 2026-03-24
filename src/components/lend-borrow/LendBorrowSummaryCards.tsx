@@ -1,6 +1,6 @@
 "use client";
 
-import { HandCoins, HandHelping } from "lucide-react";
+import { HandCoins, HandHelping, Scale } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LendBorrowEntry } from "@/models/lend-borrow.model";
 import { formatCurrency } from "@/lib/utils";
@@ -15,6 +15,7 @@ export function LendBorrowSummaryCards({ entries }: Props) {
 
   const lendTotal = lendEntries.reduce((sum, entry) => sum + entry.total_amount, 0);
   const borrowTotal = borrowEntries.reduce((sum, entry) => sum + entry.total_amount, 0);
+  const netBalance = lendTotal - borrowTotal;
 
   const cards = [
     {
@@ -29,20 +30,26 @@ export function LendBorrowSummaryCards({ entries }: Props) {
       title: "Total Borrowed",
       value: formatCurrency(borrowTotal),
       icon: HandCoins,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-100 dark:bg-amber-900/30",
+      color: "text-red-600 dark:text-red-400",
+      bg: "bg-red-100 dark:bg-red-900/30",
       trend: `${borrowEntries.length} ${borrowEntries.length === 1 ? "entry" : "entries"}`,
+    },
+    {
+      title: "Balance (Lend - Borrow)",
+      value: formatCurrency(netBalance),
+      icon: Scale,
+      color: netBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+      bg: netBalance >= 0 ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-red-100 dark:bg-red-900/30",
+      trend: netBalance >= 0 ? "Net receivable" : "Net payable",
     },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {card.title}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
             <div className={`rounded-md p-2 ${card.bg}`}>
               <card.icon className={`h-4 w-4 ${card.color}`} />
             </div>
