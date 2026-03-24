@@ -24,7 +24,6 @@ export default function DashboardLayout({
     }
   }, [isChecked, isAuthenticated, router]);
 
-  // Show spinner while Supabase resolves the initial session
   if (!isChecked || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -35,14 +34,11 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar className="hidden md:flex" />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto bg-background p-3 sm:p-6">{children}</main>
       </div>
     </div>
   );
 }
-
