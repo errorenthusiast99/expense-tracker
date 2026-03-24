@@ -42,8 +42,8 @@ export function SummaryCards({ transactions }: Props) {
       title: "Net Balance",
       value: formatCurrency(Math.abs(net)),
       icon: DollarSign,
-      color: net >= 0 ? "text-blue-600 dark:text-blue-400" : "text-orange-600 dark:text-orange-400",
-      bg: net >= 0 ? "bg-blue-100 dark:bg-blue-900/30" : "bg-orange-100 dark:bg-orange-900/30",
+      color: net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+      bg: net >= 0 ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-red-100 dark:bg-red-900/30",
       trend: net >= 0 ? "Surplus" : "Deficit",
     },
     {
