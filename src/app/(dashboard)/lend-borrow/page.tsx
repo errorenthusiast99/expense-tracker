@@ -13,11 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { LendBorrowList } from "@/components/lend-borrow/LendBorrowList";
 import { LendBorrowForm } from "@/components/lend-borrow/LendBorrowForm";
 import { LendBorrowSummaryCards } from "@/components/lend-borrow/LendBorrowSummaryCards";
 import { useLendBorrowStore } from "@/store/lend-borrow.store";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default function LendBorrowPage() {
   const { entries, fetchEntries, isLoading } = useLendBorrowStore();
@@ -26,6 +25,7 @@ export default function LendBorrowPage() {
   const [defaultPersonName, setDefaultPersonName] = useState("");
   const [showPersonDialog, setShowPersonDialog] = useState(false);
   const [newPersonName, setNewPersonName] = useState("");
+  const [selectedPersonName, setSelectedPersonName] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEntries();
@@ -41,26 +41,27 @@ export default function LendBorrowPage() {
     () =>
       personNames.map((personName) => {
         const personEntries = entries.filter((entry) => entry.person_name.trim() === personName);
-        const totalLent = personEntries
+        const lendPending = personEntries
           .filter((entry) => entry.type === "lend")
-          .reduce((sum, entry) => sum + entry.total_amount, 0);
-        const totalBorrowed = personEntries
+          .reduce((sum, entry) => sum + Math.max(entry.total_amount - entry.cleared_amount, 0), 0);
+        const borrowPending = personEntries
           .filter((entry) => entry.type === "borrow")
-          .reduce((sum, entry) => sum + entry.total_amount, 0);
-        const totalOutstanding = personEntries.reduce(
-          (sum, entry) => sum + Math.max(entry.total_amount - entry.cleared_amount, 0),
-          0,
-        );
+          .reduce((sum, entry) => sum + Math.max(entry.total_amount - entry.cleared_amount, 0), 0);
+        const netPending = lendPending - borrowPending;
 
         return {
           personName,
           entries: personEntries,
-          totalLent,
-          totalBorrowed,
-          totalOutstanding,
+          lendPending,
+          borrowPending,
+          netPending,
         };
       }),
     [entries, personNames],
+  );
+  const selectedPersonGroup = useMemo(
+    () => personGroups.find((group) => group.personName === selectedPersonName) ?? null,
+    [personGroups, selectedPersonName],
   );
 
   const openCreateEntry = (type: "lend" | "borrow", personName = "") => {
@@ -117,31 +118,67 @@ export default function LendBorrowPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : (
-        <div className="space-y-6">
-          {personGroups.map((group) => (
-            <div key={group.personName} className="rounded-lg border p-4 sm:p-5">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold">{group.personName}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {group.entries.length} {group.entries.length === 1 ? "record" : "records"} · Lent{" "}
-                    {formatCurrency(group.totalLent)} · Borrowed {formatCurrency(group.totalBorrowed)} ·
-                    Outstanding {formatCurrency(group.totalOutstanding)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openCreateEntry("borrow", group.personName)}>
-                    Add Borrow
-                  </Button>
-                  <Button size="sm" onClick={() => openCreateEntry("lend", group.personName)}>
-                    Add Lend
-                  </Button>
-                </div>
-              </div>
-              <LendBorrowList entries={group.entries} />
-            </div>
-          ))}
-          {personGroups.length === 0 && <LendBorrowList entries={entries} />}
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40">
+              <tr className="border-b">
+                <th className="px-4 py-3 text-left font-medium">Person name</th>
+                <th className="px-4 py-3 text-left font-medium">Pending Amount</th>
+                <th className="px-4 py-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {personGroups.map((group) => {
+                const pendingLabel =
+                  group.netPending > 0
+                    ? `Receivable ${formatCurrency(group.netPending)}`
+                    : group.netPending < 0
+                      ? `Payable ${formatCurrency(Math.abs(group.netPending))}`
+                      : "Settled";
+
+                return (
+                  <tr
+                    key={group.personName}
+                    className="cursor-pointer border-b last:border-b-0 hover:bg-muted/30"
+                    onClick={() => setSelectedPersonName(group.personName)}
+                  >
+                    <td className="px-4 py-3 font-medium">{group.personName}</td>
+                    <td className="px-4 py-3">{pendingLabel}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCreateEntry("lend", group.personName);
+                          }}
+                        >
+                          Give
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCreateEntry("borrow", group.personName);
+                          }}
+                        >
+                          Take
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {personGroups.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                    No persons yet. Add your first person to start tracking.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -178,6 +215,63 @@ export default function LendBorrowPage() {
               Continue
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedPersonGroup} onOpenChange={(open) => !open && setSelectedPersonName(null)}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedPersonGroup?.personName ?? "Person"} transactions</DialogTitle>
+            <DialogDescription>
+              {selectedPersonGroup &&
+                `Total pending: ${
+                  selectedPersonGroup.netPending > 0
+                    ? `Receivable ${formatCurrency(selectedPersonGroup.netPending)}`
+                    : selectedPersonGroup.netPending < 0
+                      ? `Payable ${formatCurrency(Math.abs(selectedPersonGroup.netPending))}`
+                      : "Settled"
+                }`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPersonGroup && (
+            <div className="overflow-hidden rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr className="border-b">
+                    <th className="px-3 py-2 text-left font-medium">Amount</th>
+                    <th className="px-3 py-2 text-left font-medium">Type</th>
+                    <th className="px-3 py-2 text-left font-medium">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedPersonGroup.entries.map((entry) => {
+                    const pendingAmount = Math.max(entry.total_amount - entry.cleared_amount, 0);
+                    return (
+                      <tr key={entry.id} className="border-b last:border-b-0">
+                        <td className="px-3 py-2">
+                          {formatCurrency(pendingAmount)}
+                        </td>
+                        <td className="px-3 py-2">{entry.type === "lend" ? "You gave" : "You took"}</td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {entry.note?.trim() || `Date: ${formatDate(entry.date)}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {selectedPersonGroup && (
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => openCreateEntry("lend", selectedPersonGroup.personName)}>
+                Give
+              </Button>
+              <Button onClick={() => openCreateEntry("borrow", selectedPersonGroup.personName)}>Take</Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
