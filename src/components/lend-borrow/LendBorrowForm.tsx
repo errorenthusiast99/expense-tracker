@@ -43,9 +43,18 @@ interface Props {
   onClose: () => void;
   entry?: LendBorrowEntry;
   defaultType?: "lend" | "borrow";
+  defaultPersonName?: string;
+  existingPersonNames?: string[];
 }
 
-export function LendBorrowForm({ open, onClose, entry, defaultType = "lend" }: Props) {
+export function LendBorrowForm({
+  open,
+  onClose,
+  entry,
+  defaultType = "lend",
+  defaultPersonName = "",
+  existingPersonNames = [],
+}: Props) {
   const { createEntry, updateEntry, isLoading } = useLendBorrowStore();
   const { toast } = useToast();
 
@@ -59,7 +68,7 @@ export function LendBorrowForm({ open, onClose, entry, defaultType = "lend" }: P
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
       type: entry?.type ?? defaultType,
-      personName: entry?.person_name ?? "",
+      personName: entry?.person_name ?? defaultPersonName,
       totalAmount: entry?.total_amount,
       date: entry?.date ? format(new Date(entry.date), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
       note: entry?.note ?? "",
@@ -71,12 +80,12 @@ export function LendBorrowForm({ open, onClose, entry, defaultType = "lend" }: P
 
     reset({
       type: entry?.type ?? defaultType,
-      personName: entry?.person_name ?? "",
+      personName: entry?.person_name ?? defaultPersonName,
       totalAmount: entry?.total_amount,
       date: entry?.date ? format(new Date(entry.date), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
       note: entry?.note ?? "",
     });
-  }, [open, entry, defaultType, reset]);
+  }, [open, entry, defaultType, defaultPersonName, reset]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -131,7 +140,17 @@ export function LendBorrowForm({ open, onClose, entry, defaultType = "lend" }: P
 
           <div className="space-y-2">
             <Label htmlFor="personName">Person / Party</Label>
-            <Input id="personName" placeholder="e.g. John, Office friend" {...register("personName")} />
+            <Input
+              id="personName"
+              list="person-names"
+              placeholder="e.g. John, Office friend"
+              {...register("personName")}
+            />
+            <datalist id="person-names">
+              {existingPersonNames.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
             {errors.personName && <p className="text-xs text-destructive">{errors.personName.message}</p>}
           </div>
 
