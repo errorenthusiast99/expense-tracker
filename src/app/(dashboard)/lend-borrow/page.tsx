@@ -135,6 +135,12 @@ export default function LendBorrowPage() {
                     : group.netPending < 0
                       ? `Payable ${formatCurrency(Math.abs(group.netPending))}`
                       : "Settled";
+                const pendingClassName =
+                  group.netPending > 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : group.netPending < 0
+                      ? "text-red-600 dark:text-red-400"
+                      : "text-muted-foreground";
 
                 return (
                   <tr
@@ -143,7 +149,7 @@ export default function LendBorrowPage() {
                     onClick={() => setSelectedPersonName(group.personName)}
                   >
                     <td className="px-4 py-3 font-medium">{group.personName}</td>
-                    <td className="px-4 py-3">{pendingLabel}</td>
+                    <td className={`px-4 py-3 font-medium ${pendingClassName}`}>{pendingLabel}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -247,12 +253,22 @@ export default function LendBorrowPage() {
                 <tbody>
                   {selectedPersonGroup.entries.map((entry) => {
                     const pendingAmount = Math.max(entry.total_amount - entry.cleared_amount, 0);
+                    const amountClassName =
+                      entry.type === "lend"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400";
+                    const typeClassName =
+                      entry.type === "lend"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400";
                     return (
                       <tr key={entry.id} className="border-b last:border-b-0">
-                        <td className="px-3 py-2">
+                        <td className={`px-3 py-2 font-medium ${amountClassName}`}>
                           {formatCurrency(pendingAmount)}
                         </td>
-                        <td className="px-3 py-2">{entry.type === "lend" ? "You gave" : "You took"}</td>
+                        <td className={`px-3 py-2 font-medium ${typeClassName}`}>
+                          {entry.type === "lend" ? "You gave" : "You took"}
+                        </td>
                         <td className="px-3 py-2 text-muted-foreground">
                           {entry.note?.trim() || `Date: ${formatDate(entry.date)}`}
                         </td>
