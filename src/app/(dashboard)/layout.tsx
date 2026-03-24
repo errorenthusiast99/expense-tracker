@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { isAuthenticated, isChecked, initialize } = useAuthStore();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -34,15 +36,20 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+    <div className="flex min-h-screen overflow-hidden">
+      <Sidebar className="hidden h-screen md:flex" />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
+        <TopBar showMenuButton onMenuClick={() => setMobileSidebarOpen(true)} />
+        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6">
           {children}
         </main>
       </div>
+
+      <Dialog open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <DialogContent className="w-[85vw] max-w-xs p-0 md:hidden">
+          <Sidebar className="h-[100dvh] border-r-0" onNavigate={() => setMobileSidebarOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

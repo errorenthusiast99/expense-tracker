@@ -15,6 +15,8 @@ interface Props {
   data: CategoryBreakdown[];
 }
 
+const MAX_VISIBLE_CATEGORIES = 5;
+
 export function CategoryBreakdownChart({ data }: Props) {
   const expenseData = data.filter((d) => d.type === "expense");
 
@@ -32,11 +34,25 @@ export function CategoryBreakdownChart({ data }: Props) {
     );
   }
 
-  const chartData = expenseData.map((d) => ({
-    name: d.parentCategoryName ? `${d.parentCategoryName} / ${d.categoryName}` : d.categoryName,
-    value: d.total,
-    percentage: d.percentage,
+  const sortedData = [...expenseData].sort((a, b) => b.total - a.total);
+  const topCategories = sortedData.slice(0, MAX_VISIBLE_CATEGORIES);
+  const remainingCategories = sortedData.slice(MAX_VISIBLE_CATEGORIES);
+  const totalExpense = sortedData.reduce((sum, item) => sum + item.total, 0);
+  const remainingTotal = remainingCategories.reduce((sum, item) => sum + item.total, 0);
+
+  const chartData = topCategories.map((item) => ({
+    name: item.categoryName,
+    value: item.total,
+    percentage: totalExpense > 0 ? (item.total / totalExpense) * 100 : 0,
   }));
+
+  if (remainingTotal > 0) {
+    chartData.push({
+      name: "Others",
+      value: remainingTotal,
+      percentage: totalExpense > 0 ? (remainingTotal / totalExpense) * 100 : 0,
+    });
+  }
 
   return (
     <Card>
@@ -70,15 +86,13 @@ export function CategoryBreakdownChart({ data }: Props) {
                   fontSize: "12px",
                 }}
               />
-              <Legend
-                formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
-              />
+              <Legend formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>} />
             </PieChart>
           </ResponsiveContainer>
 
           {/* Legend list */}
           <div className="min-w-[180px] space-y-1.5">
-            {chartData.slice(0, 7).map((item, i) => (
+            {chartData.map((item, i) => (
               <div key={i} className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <div

@@ -32,7 +32,12 @@ const navItems = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string;
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ className, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
@@ -58,7 +63,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-card">
+    <aside className={cn("flex h-full w-64 flex-col border-r bg-card", className)}>
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5">
         <div className="flex h-8 w-8 items-center justify-center">
@@ -80,7 +85,7 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href}>
+          <Link key={href} href={href} onClick={onNavigate}>
             <div
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
@@ -121,7 +126,10 @@ export function Sidebar() {
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
-          onClick={handleLogout}
+          onClick={() => {
+            handleLogout();
+            onNavigate?.();
+          }}
         >
           <LogOut className="h-4 w-4" />
           Logout
