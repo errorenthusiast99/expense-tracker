@@ -24,12 +24,12 @@ import {
 const primaryItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/categories", label: "Categories", icon: Tag },
+  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/recurring", label: "Repetitive", icon: Repeat2 },
 ];
 
 const moreItems = [
-  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { href: "/categories", label: "Categories", icon: Tag },
   { href: "/financial-items", label: "Financial Items", icon: Wallet },
   { href: "/lend-borrow", label: "Lend / Borrow", icon: HandCoins },
 ];
