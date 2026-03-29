@@ -123,12 +123,15 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="h-[100dvh] w-screen max-w-none rounded-none p-0 sm:h-auto sm:max-w-md sm:rounded-lg sm:p-6">
         <DialogHeader>
-          <DialogTitle>{transaction ? "Edit Transaction" : "Add Transaction"}</DialogTitle>
+          <DialogTitle className="px-4 pt-6 sm:px-0 sm:pt-0">
+            {transaction ? "Edit Transaction" : "Add Transaction"}
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex h-full flex-col">
+          <div className="space-y-4 overflow-y-auto px-4 pb-28 pt-4 sm:max-h-[70vh] sm:px-0 sm:pb-4 sm:pt-0">
           {/* Type */}
           <div className="space-y-2">
             <Label>Type</Label>
@@ -236,14 +239,15 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
             <Label htmlFor="note">Note (optional)</Label>
             <Textarea id="note" placeholder="Add a note..." rows={2} {...register("note")} />
           </div>
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="fixed inset-x-0 bottom-0 border-t bg-background px-4 py-3 sm:static sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="min-w-28" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {transaction ? "Update" : "Add"}
+              {transaction ? "Update" : "Save"}
             </Button>
           </DialogFooter>
         </form>

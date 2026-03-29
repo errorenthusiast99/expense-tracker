@@ -38,7 +38,7 @@ export function LoginForm() {
     try {
       await login(data.email, data.password);
       toast({ title: "Welcome back!", variant: "default" });
-      router.push("/dashboard");
+      router.push("/analytics");
     } catch {
       toast({
         title: "Login failed",
@@ -50,7 +50,7 @@ export function LoginForm() {
 
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle(`${window.location.origin}/dashboard`);
+      await loginWithGoogle(`${window.location.origin}/analytics`);
     } catch {
       toast({
         title: "Google sign in failed",
