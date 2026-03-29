@@ -56,7 +56,7 @@ export function RegisterForm() {
 
   const handleGoogleSignUp = async () => {
     try {
-      await loginWithGoogle(`${window.location.origin}/dashboard`);
+      await loginWithGoogle(`${window.location.origin}/analytics`);
     } catch {
       toast({
         title: "Google sign up failed",

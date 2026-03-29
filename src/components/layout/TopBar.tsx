@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Download, Menu } from "lucide-react";
+import { Bell, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTransactionStore } from "@/store/transaction.store";
 import { useCategoryStore } from "@/store/category.store";
@@ -18,12 +18,7 @@ const pageTitles: Record<string, string> = {
   "/analytics": "Analytics",
 };
 
-interface Props {
-  onMenuClick?: () => void;
-  showMenuButton?: boolean;
-}
-
-export function TopBar({ onMenuClick, showMenuButton = false }: Props) {
+export function TopBar() {
   const pathname = usePathname();
   const title = pageTitles[pathname] ?? "ExpenseTracker";
   const { transactions } = useTransactionStore();
@@ -37,11 +32,6 @@ export function TopBar({ onMenuClick, showMenuButton = false }: Props) {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-4 sm:px-6">
       <div className="flex items-center gap-2">
-        {showMenuButton && (
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
         <h1 className="text-xl font-semibold">{title}</h1>
       </div>
 

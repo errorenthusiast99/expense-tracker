@@ -37,7 +37,7 @@ export default function TransactionsPage() {
             {transactions.length} transaction{transactions.length !== 1 ? "s" : ""} found
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
+        <Button onClick={() => setShowForm(true)} className="hidden gap-2 md:inline-flex">
           <Plus className="h-4 w-4" />
           Add Transaction
         </Button>
