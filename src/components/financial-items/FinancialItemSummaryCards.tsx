@@ -12,6 +12,7 @@ export function FinancialItemSummaryCards({ items }: Props) {
   const loans = items.filter((item) => item.type === "loan");
   const investments = items.filter((item) => item.type === "investment");
   const assets = items.filter((item) => item.type === "asset");
+  const creditCards = items.filter((item) => item.type === "credit_card");
 
   const cards = [
     {
@@ -38,10 +39,18 @@ export function FinancialItemSummaryCards({ items }: Props) {
       bg: "bg-violet-100 dark:bg-violet-900/30",
       trend: `${assets.length === 1 ? "Item" : "Items"} recorded`,
     },
+    {
+      title: "Credit Cards",
+      value: `${creditCards.length}`,
+      icon: Wallet,
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+      trend: `${creditCards.length === 1 ? "Card" : "Cards"} recorded`,
+    },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

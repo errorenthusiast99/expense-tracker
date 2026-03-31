@@ -8,6 +8,8 @@ import { FinancialItemList } from "@/components/financial-items/FinancialItemLis
 import { FinancialItemForm } from "@/components/financial-items/FinancialItemForm";
 import { FinancialItemSummaryCards } from "@/components/financial-items/FinancialItemSummaryCards";
 import { useFinancialItemStore } from "@/store/financial-item.store";
+import { formatCurrency } from "@/lib/utils";
+import { getCreditCardOutstandingTotal, getLoanOutstandingTotal } from "@/lib/financial-items";
 
 export default function FinancialItemsPage() {
   const { items, fetchItems, isLoading } = useFinancialItemStore();
@@ -20,13 +22,21 @@ export default function FinancialItemsPage() {
   const loans = items.filter((i) => i.type === "loan");
   const investments = items.filter((i) => i.type === "investment");
   const assets = items.filter((i) => i.type === "asset");
+  const creditCards = items.filter((i) => i.type === "credit_card");
+
+  const loanOutstanding = getLoanOutstandingTotal(items);
+  const creditCardOutstanding = getCreditCardOutstandingTotal(items);
+  const totalLiability = loanOutstanding + creditCardOutstanding;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            {items.length} {items.length === 1 ? "item" : "items"} · {loans.length} loans · {investments.length} investments · {assets.length} assets
+            {items.length} {items.length === 1 ? "item" : "items"} · {loans.length} loans · {creditCards.length} credit cards · {investments.length} investments · {assets.length} assets
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Loan Outstanding: {formatCurrency(loanOutstanding)} · Credit Card Outstanding: {formatCurrency(creditCardOutstanding)} · Total Liability: {formatCurrency(totalLiability)}
           </p>
         </div>
         <Button onClick={() => setShowForm(true)} className="gap-2">
@@ -48,6 +58,7 @@ export default function FinancialItemsPage() {
             <TabsTrigger value="loans">Loans ({loans.length})</TabsTrigger>
             <TabsTrigger value="investments">Investments ({investments.length})</TabsTrigger>
             <TabsTrigger value="assets">Assets ({assets.length})</TabsTrigger>
+            <TabsTrigger value="credit-cards">Credit Cards ({creditCards.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-4">
@@ -61,6 +72,9 @@ export default function FinancialItemsPage() {
           </TabsContent>
           <TabsContent value="assets" className="mt-4">
             <FinancialItemList items={assets} />
+          </TabsContent>
+          <TabsContent value="credit-cards" className="mt-4">
+            <FinancialItemList items={creditCards} />
           </TabsContent>
         </Tabs>
       )}

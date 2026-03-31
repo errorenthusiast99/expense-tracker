@@ -30,20 +30,40 @@ const numericField = z.union([z.number(), z.nan(), z.undefined()]).optional().tr
 
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  type: z.enum(["loan", "investment", "asset"]),
+  type: z.enum(["loan", "investment", "asset", "credit_card"]),
   description: z.string().optional(),
+  loanType: z.string().optional(),
+  totalAmount: numericField,
+  emiDate: numericField,
+  startDate: z.string().optional(),
   interestRate: numericField,
   emiAmount: numericField,
   currentValue: numericField,
+  cardEnding: z.string().optional(),
+  bankName: z.string().optional(),
+  cardType: z.string().optional(),
+  outstandingBalance: numericField,
+  rewardsConversionRatio: numericField,
+  savingsRate: numericField,
 });
 
 type FormData = {
   name: string;
-  type: "loan" | "investment" | "asset";
+  type: "loan" | "investment" | "asset" | "credit_card";
   description?: string;
+  loanType?: string;
+  totalAmount?: number;
+  emiDate?: number;
+  startDate?: string;
   interestRate?: number;
   emiAmount?: number;
   currentValue?: number;
+  cardEnding?: string;
+  bankName?: string;
+  cardType?: string;
+  outstandingBalance?: number;
+  rewardsConversionRatio?: number;
+  savingsRate?: number;
 };
 
 interface Props {
@@ -72,18 +92,60 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       interestRate: item?.meta?.interestRate,
       emiAmount: item?.meta?.emiAmount,
       currentValue: item?.meta?.currentValue,
+      loanType: typeof item?.meta?.loanType === "string" ? item.meta.loanType : "",
+      totalAmount: item?.meta?.totalAmount,
+      emiDate: item?.meta?.emiDate,
+      startDate: item?.meta?.startDate,
+      cardEnding: typeof item?.meta?.cardEnding === "string" ? item.meta.cardEnding : "",
+      bankName: typeof item?.meta?.bankName === "string" ? item.meta.bankName : "",
+      cardType: typeof item?.meta?.cardType === "string" ? item.meta.cardType : "",
+      outstandingBalance: item?.meta?.outstandingBalance,
+      rewardsConversionRatio: item?.meta?.rewardsConversionRatio,
+      savingsRate: item?.meta?.savingsRate,
     },
   });
 
   const selectedType = watch("type");
 
   const onSubmit = async (data: FormData) => {
-    const { name, type, description, interestRate, emiAmount, currentValue } = data;
+    const {
+      name,
+      type,
+      description,
+      loanType,
+      totalAmount,
+      emiDate,
+      startDate,
+      interestRate,
+      emiAmount,
+      currentValue,
+      cardEnding,
+      bankName,
+      cardType,
+      outstandingBalance,
+      rewardsConversionRatio,
+      savingsRate,
+    } = data;
+
+    const normalizedLoanType = loanType?.trim().toLowerCase();
+    const interestMethod = type === "loan" && normalizedLoanType === "personal" ? "reducing_balance" : undefined;
+
     const meta = {
       ...(description && { description }),
+      ...(loanType && { loanType }),
+      ...(totalAmount !== undefined && { totalAmount }),
+      ...(emiDate !== undefined && { emiDate }),
+      ...(startDate && { startDate }),
+      ...(interestMethod && { interestMethod }),
       ...(interestRate !== undefined && { interestRate }),
       ...(emiAmount !== undefined && { emiAmount }),
       ...(currentValue !== undefined && { currentValue }),
+      ...(cardEnding && { cardEnding }),
+      ...(bankName && { bankName }),
+      ...(cardType && { cardType }),
+      ...(outstandingBalance !== undefined && { outstandingBalance }),
+      ...(rewardsConversionRatio !== undefined && { rewardsConversionRatio }),
+      ...(savingsRate !== undefined && { savingsRate }),
     };
 
     try {
@@ -129,6 +191,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
                     <SelectItem value="loan">Loan</SelectItem>
                     <SelectItem value="investment">Investment</SelectItem>
                     <SelectItem value="asset">Asset</SelectItem>
+                    <SelectItem value="credit_card">Credit Card</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -137,6 +200,38 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
 
           {selectedType === "loan" && (
             <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 col-span-2">
+                <Label>Loan Type</Label>
+                <Controller
+                  name="loanType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select loan type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="home">Home Loan</SelectItem>
+                        <SelectItem value="personal">Personal Loan</SelectItem>
+                        <SelectItem value="car">Car Loan</SelectItem>
+                        <SelectItem value="education">Education Loan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="totalAmount">Total Amount (₹)</Label>
+                <Input id="totalAmount" type="number" placeholder="1000000" {...register("totalAmount", { valueAsNumber: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emiDate">EMI Date (Day)</Label>
+                <Input id="emiDate" type="number" min={1} max={31} placeholder="5" {...register("emiDate", { valueAsNumber: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input id="startDate" type="date" {...register("startDate")} />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="interestRate">Interest Rate (%)</Label>
                 <Input id="interestRate" type="number" step="0.01" placeholder="8.5" {...register("interestRate", { valueAsNumber: true })} />
@@ -144,6 +239,51 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
               <div className="space-y-2">
                 <Label htmlFor="emiAmount">EMI Amount (₹)</Label>
                 <Input id="emiAmount" type="number" placeholder="15000" {...register("emiAmount", { valueAsNumber: true })} />
+              </div>
+            </div>
+          )}
+
+          {selectedType === "credit_card" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="cardEnding">Card Ending</Label>
+                <Input id="cardEnding" placeholder="1234" maxLength={4} {...register("cardEnding")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bankName">Bank Name</Label>
+                <Input id="bankName" placeholder="HDFC" {...register("bankName")} />
+              </div>
+              <div className="space-y-2">
+                <Label>Card Type</Label>
+                <Controller
+                  name="cardType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select card type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="visa">Visa</SelectItem>
+                        <SelectItem value="mastercard">Mastercard</SelectItem>
+                        <SelectItem value="rupay">Rupay</SelectItem>
+                        <SelectItem value="amex">Amex</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="outstandingBalance">Outstanding Balance (₹)</Label>
+                <Input id="outstandingBalance" type="number" placeholder="35000" {...register("outstandingBalance", { valueAsNumber: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rewardsConversionRatio">Rewards Conversion Ratio</Label>
+                <Input id="rewardsConversionRatio" type="number" step="0.01" placeholder="0.25" {...register("rewardsConversionRatio", { valueAsNumber: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="savingsRate">Savings Rate (%)</Label>
+                <Input id="savingsRate" type="number" step="0.01" placeholder="3" {...register("savingsRate", { valueAsNumber: true })} />
               </div>
             </div>
           )}

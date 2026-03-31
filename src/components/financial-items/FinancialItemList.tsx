@@ -18,17 +18,20 @@ import { FinancialItem } from "@/models/financial-item.model";
 import { FinancialItemForm } from "./FinancialItemForm";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { formatEmiDayLabel, getEffectiveSavingsRate, getLastEmiDate, getLoanOutstanding } from "@/lib/financial-items";
 
 const typeIcons = {
   loan: Building2,
   investment: TrendingUp,
   asset: Wallet,
+  credit_card: Wallet,
 };
 
 const typeBadgeVariant: Record<string, "destructive" | "success" | "secondary"> = {
   loan: "destructive",
   investment: "success",
   asset: "secondary",
+  credit_card: "secondary",
 };
 
 interface Props {
@@ -71,6 +74,13 @@ export function FinancialItemList({ items }: Props) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
           const Icon = typeIcons[item.type];
+          const loanOutstanding = item.type === "loan" ? getLoanOutstanding(item) : 0;
+          const effectiveSavingsRate = item.type === "credit_card" ? getEffectiveSavingsRate(item) : 0;
+          const lastEmiDate =
+            item.type === "loan" && item.meta.startDate && item.meta.emiDate
+              ? getLastEmiDate(item.meta.startDate, Number(item.meta.emiDate))
+              : null;
+
           return (
             <Card key={item.id} className="transition-shadow hover:shadow-md">
               <CardContent className="p-5">
@@ -114,10 +124,70 @@ export function FinancialItemList({ items }: Props) {
                       <span className="font-medium text-foreground">{item.meta.interestRate}%</span>
                     </div>
                   )}
+                  {item.meta.totalAmount !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Total Principal</span>
+                      <span className="font-medium text-foreground">{formatCurrency(item.meta.totalAmount)}</span>
+                    </div>
+                  )}
                   {item.meta.emiAmount !== undefined && (
                     <div className="flex justify-between">
                       <span>EMI</span>
                       <span className="font-medium text-foreground">{formatCurrency(item.meta.emiAmount)}</span>
+                    </div>
+                  )}
+                  {item.meta.emiDate !== undefined && (
+                    <div className="flex justify-between">
+                      <span>EMI Due</span>
+                      <span className="font-medium text-foreground">{formatEmiDayLabel(Number(item.meta.emiDate))}</span>
+                    </div>
+                  )}
+                  {item.meta.startDate && (
+                    <div className="flex justify-between">
+                      <span>Start Date</span>
+                      <span className="font-medium text-foreground">{item.meta.startDate}</span>
+                    </div>
+                  )}
+                  {item.type === "loan" && (
+                    <div className="flex justify-between">
+                      <span>Outstanding (last EMI)</span>
+                      <span className="font-medium text-foreground">{formatCurrency(loanOutstanding)}</span>
+                    </div>
+                  )}
+                  {item.type === "loan" && lastEmiDate && (
+                    <div className="flex justify-between">
+                      <span>Last EMI Date</span>
+                      <span className="font-medium text-foreground">{lastEmiDate.toISOString().split("T")[0]}</span>
+                    </div>
+                  )}
+                  {item.meta.cardEnding && (
+                    <div className="flex justify-between">
+                      <span>Card</span>
+                      <span className="font-medium text-foreground">•••• {item.meta.cardEnding}</span>
+                    </div>
+                  )}
+                  {item.meta.bankName && (
+                    <div className="flex justify-between">
+                      <span>Bank</span>
+                      <span className="font-medium text-foreground">{item.meta.bankName}</span>
+                    </div>
+                  )}
+                  {item.meta.cardType && (
+                    <div className="flex justify-between">
+                      <span>Card Type</span>
+                      <span className="font-medium text-foreground capitalize">{String(item.meta.cardType)}</span>
+                    </div>
+                  )}
+                  {item.meta.outstandingBalance !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Outstanding</span>
+                      <span className="font-medium text-foreground">{formatCurrency(Number(item.meta.outstandingBalance))}</span>
+                    </div>
+                  )}
+                  {item.type === "credit_card" && (
+                    <div className="flex justify-between">
+                      <span>Effective Savings</span>
+                      <span className="font-medium text-foreground">{effectiveSavingsRate.toFixed(2)}%</span>
                     </div>
                   )}
                   {item.meta.currentValue !== undefined && (

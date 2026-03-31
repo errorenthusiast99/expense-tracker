@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS financial_items (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid() NOT NULL,
   name        VARCHAR(200) NOT NULL,
-  type        VARCHAR(20)  NOT NULL CHECK (type IN ('loan', 'investment', 'asset')),
+  type        VARCHAR(20)  NOT NULL CHECK (type IN ('loan', 'investment', 'asset', 'credit_card')),
   meta        JSONB DEFAULT '{}' NOT NULL,
   created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
