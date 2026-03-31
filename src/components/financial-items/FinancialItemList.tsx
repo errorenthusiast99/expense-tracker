@@ -78,7 +78,7 @@ export function FinancialItemList({ items }: Props) {
           const effectiveSavingsRate = item.type === "credit_card" ? getEffectiveSavingsRate(item) : 0;
           const lastEmiDate =
             item.type === "loan" && item.meta.startDate && item.meta.emiDate
-              ? getLastEmiDate(item.meta.startDate, Number(item.meta.emiDate))
+              ? getLastEmiDate(item.meta.startDate, Number(item.meta.emiDate), new Date(), Number(item.meta.tenure ?? 0) || undefined)
               : null;
 
           return (
@@ -140,6 +140,12 @@ export function FinancialItemList({ items }: Props) {
                     <div className="flex justify-between">
                       <span>EMI Due</span>
                       <span className="font-medium text-foreground">{formatEmiDayLabel(Number(item.meta.emiDate))}</span>
+                    </div>
+                  )}
+                  {item.meta.tenure !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Total Months</span>
+                      <span className="font-medium text-foreground">{Number(item.meta.tenure)} months</span>
                     </div>
                   )}
                   {item.meta.startDate && (

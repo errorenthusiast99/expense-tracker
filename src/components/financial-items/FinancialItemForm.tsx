@@ -34,6 +34,7 @@ const schema = z.object({
   description: z.string().optional(),
   loanType: z.string().optional(),
   totalAmount: numericField,
+  tenure: numericField,
   emiDate: numericField,
   startDate: z.string().optional(),
   interestRate: numericField,
@@ -53,6 +54,7 @@ type FormData = {
   description?: string;
   loanType?: string;
   totalAmount?: number;
+  tenure?: number;
   emiDate?: number;
   startDate?: string;
   interestRate?: number;
@@ -94,6 +96,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       currentValue: item?.meta?.currentValue,
       loanType: typeof item?.meta?.loanType === "string" ? item.meta.loanType : "",
       totalAmount: item?.meta?.totalAmount,
+      tenure: item?.meta?.tenure,
       emiDate: item?.meta?.emiDate,
       startDate: item?.meta?.startDate,
       cardEnding: typeof item?.meta?.cardEnding === "string" ? item.meta.cardEnding : "",
@@ -114,6 +117,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       description,
       loanType,
       totalAmount,
+      tenure,
       emiDate,
       startDate,
       interestRate,
@@ -134,6 +138,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       ...(description && { description }),
       ...(loanType && { loanType }),
       ...(totalAmount !== undefined && { totalAmount }),
+      ...(tenure !== undefined && { tenure }),
       ...(emiDate !== undefined && { emiDate }),
       ...(startDate && { startDate }),
       ...(interestMethod && { interestMethod }),
@@ -227,6 +232,10 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
               <div className="space-y-2">
                 <Label htmlFor="emiDate">EMI Date (Day)</Label>
                 <Input id="emiDate" type="number" min={1} max={31} placeholder="5" {...register("emiDate", { valueAsNumber: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenure">Total Months</Label>
+                <Input id="tenure" type="number" min={1} placeholder="48" {...register("tenure", { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="startDate">Start Date</Label>

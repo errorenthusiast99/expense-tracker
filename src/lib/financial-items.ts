@@ -6,64 +6,81 @@ function toUTCDate(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
-export function getLastEmiDate(startDate: string, emiDate: number, asOf: Date = new Date()): Date | null {
-  if (!startDate || !Number.isFinite(emiDate) || emiDate < 1 || emiDate > 31) return null;
-
-  const start = new Date(startDate);
-  if (Number.isNaN(start.getTime())) return null;
-
+export function getLastEmiDate(startDate: string, emiDate: number, asOf: Date = new Date(), tenureMonths?: number): Date | null {
   const anchor = toUTCDate(asOf);
-
-  const startMonthDue = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), emiDate));
-  const firstDue = toUTCDate(start) <= startMonthDue
-    ? startMonthDue
-    : new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, emiDate));
-
-  if (firstDue > anchor) return null;
-
-  const dueThisMonth = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), emiDate));
-  if (dueThisMonth <= anchor) return dueThisMonth;
-
-  return new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() - 1, emiDate));
+  const dueDates = getDueDates(startDate, emiDate, tenureMonths);
+  const paid = dueDates.filter((due) => due <= anchor);
+  return paid.length > 0 ? paid[paid.length - 1] : null;
 }
 
-export function getPaidEmiCount(startDate: string, emiDate: number, asOf: Date = new Date()): number {
+function getDaysInMonthUTC(year: number, month: number): number {
+  return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+}
+
+function getDueDateForMonthUTC(year: number, month: number, emiDate: number): Date {
+  const maxDay = getDaysInMonthUTC(year, month);
+  const dueDay = Math.min(Math.max(1, emiDate), maxDay);
+  return new Date(Date.UTC(year, month, dueDay));
+}
+
+function getFirstDueDate(startDate: Date, emiDate: number): Date {
+  const startMonthDue = getDueDateForMonthUTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), emiDate);
+  if (toUTCDate(startDate) <= startMonthDue) return startMonthDue;
+  return getDueDateForMonthUTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, emiDate);
+}
+
+function getDueDates(startDate: string, emiDate: number, tenureMonths?: number): Date[] {
   const start = new Date(startDate);
-  if (Number.isNaN(start.getTime()) || !Number.isFinite(emiDate)) return 0;
+  if (Number.isNaN(start.getTime()) || !Number.isFinite(emiDate)) return [];
 
-  const lastDueDate = getLastEmiDate(startDate, emiDate, asOf);
-  if (!lastDueDate) return 0;
+  const firstDue = getFirstDueDate(start, emiDate);
+  const count = Number.isFinite(tenureMonths) && tenureMonths && tenureMonths > 0
+    ? Math.floor(tenureMonths)
+    : 600;
 
-  const startMonthDue = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), emiDate));
-  const firstDueDate = toUTCDate(start) <= startMonthDue
-    ? startMonthDue
-    : new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, emiDate));
+  return Array.from({ length: count }, (_, i) =>
+    getDueDateForMonthUTC(firstDue.getUTCFullYear(), firstDue.getUTCMonth() + i, emiDate)
+  );
+}
 
-  const monthDiff =
-    (lastDueDate.getUTCFullYear() - firstDueDate.getUTCFullYear()) * 12 +
-    (lastDueDate.getUTCMonth() - firstDueDate.getUTCMonth());
-
-  return monthDiff + 1;
+export function getPaidEmiCount(startDate: string, emiDate: number, asOf: Date = new Date(), tenureMonths?: number): number {
+  return getDueDates(startDate, emiDate, tenureMonths).filter((due) => due <= toUTCDate(asOf)).length;
 }
 
 export function calculateReducingBalanceOutstanding(
   principal: number,
   annualInterestRate: number,
   emiAmount: number,
-  paidEmis: number
+  paidEmis: number,
+  startDate?: string,
+  emiDate?: number,
+  tenureMonths?: number
 ): number {
   if (!Number.isFinite(principal) || principal <= 0) return 0;
   if (!Number.isFinite(emiAmount) || emiAmount <= 0 || paidEmis <= 0) return principal;
 
-  const monthlyRate = Number.isFinite(annualInterestRate) ? annualInterestRate / 100 / 12 : 0;
+  const dueDates =
+    startDate && Number.isFinite(emiDate)
+      ? getDueDates(startDate, Number(emiDate), tenureMonths)
+      : [];
+  const dailyRate = Number.isFinite(annualInterestRate) ? annualInterestRate / 100 / 365 : 0;
   let balance = principal;
+  let periodStart = startDate ? toUTCDate(new Date(startDate)) : null;
 
   for (let i = 0; i < paidEmis; i += 1) {
     if (balance <= 0) break;
-    const interest = balance * monthlyRate;
+
+    const periodEnd = dueDates[i];
+    const days = periodStart && periodEnd
+      ? Math.max(1, Math.round((periodEnd.getTime() - periodStart.getTime()) / DAY_IN_MS))
+      : 30;
+    const interest = balance * dailyRate * days;
     const principalPaid = Math.max(emiAmount - interest, 0);
     if (principalPaid === 0) break;
     balance = Math.max(balance - principalPaid, 0);
+    if (periodEnd) {
+      periodStart = periodEnd;
+    }
   }
 
   return balance;
@@ -75,11 +92,12 @@ export function getLoanOutstanding(item: FinancialItem, asOf: Date = new Date())
   const interestRate = Number(item.meta.interestRate ?? 0);
   const startDate = typeof item.meta.startDate === "string" ? item.meta.startDate : "";
   const emiDate = Number(item.meta.emiDate ?? 0);
+  const tenureMonths = Number(item.meta.tenure ?? 0);
 
   if (!principal || !emi || !startDate || !emiDate) return 0;
 
-  const paidEmis = getPaidEmiCount(startDate, emiDate, asOf);
-  return calculateReducingBalanceOutstanding(principal, interestRate, emi, paidEmis);
+  const paidEmis = getPaidEmiCount(startDate, emiDate, asOf, tenureMonths || undefined);
+  return calculateReducingBalanceOutstanding(principal, interestRate, emi, paidEmis, startDate, emiDate, tenureMonths || undefined);
 }
 
 export function getCreditCardOutstanding(item: FinancialItem): number {
