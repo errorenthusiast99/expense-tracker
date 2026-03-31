@@ -4,12 +4,15 @@ import { TrendingUp, TrendingDown, DollarSign, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Transaction } from "@/models/transaction.model";
 import { formatCurrency } from "@/lib/utils";
+import { FinancialItem } from "@/models/financial-item.model";
+import { getTotalOutstanding } from "@/lib/financial-items";
 
 interface Props {
   transactions: Transaction[];
+  items: FinancialItem[];
 }
 
-export function SummaryCards({ transactions }: Props) {
+export function SummaryCards({ transactions, items }: Props) {
   const income = transactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
@@ -20,8 +23,17 @@ export function SummaryCards({ transactions }: Props) {
 
   const net = income - expense;
   const savingsRate = income > 0 ? ((net / income) * 100).toFixed(1) : "0";
+  const totalOutstanding = getTotalOutstanding(items);
 
   const cards = [
+    {
+      title: "Total Outstanding",
+      value: formatCurrency(totalOutstanding),
+      icon: DollarSign,
+      color: "text-orange-600 dark:text-orange-400",
+      bg: "bg-orange-100 dark:bg-orange-900/30",
+      trend: "Loans + credit cards",
+    },
     {
       title: "Total Income",
       value: formatCurrency(income),
@@ -57,9 +69,9 @@ export function SummaryCards({ transactions }: Props) {
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.title}>
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      {cards.map((card, index) => (
+        <Card key={card.title} className={index === 0 ? "col-span-2 lg:col-span-1" : "col-span-1"}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {card.title}

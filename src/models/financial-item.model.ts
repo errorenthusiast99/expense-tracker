@@ -1,10 +1,22 @@
-export type FinancialItemType = "loan" | "investment" | "asset";
+export type FinancialItemType = "loan" | "investment" | "asset" | "credit_card";
 
 export interface FinancialItemMeta {
+  loanType?: "home" | "personal" | "car" | "education" | string;
+  totalAmount?: number;
+  emiDate?: number;
   interestRate?: number;
   tenure?: number; // months
   emiAmount?: number;
   startDate?: string;
+  interestMethod?: "reducing_balance" | "flat_rate" | string;
+
+  cardEnding?: string;
+  bankName?: string;
+  cardType?: "visa" | "mastercard" | "rupay" | "amex" | string;
+  outstandingBalance?: number;
+  rewardsConversionRatio?: number;
+  savingsRate?: number;
+
   maturityDate?: string;
   currentValue?: number;
   purchaseValue?: number;

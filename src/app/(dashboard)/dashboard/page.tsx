@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <SummaryCards transactions={transactions} />
+      <SummaryCards transactions={transactions} items={items} />
       <HoldingsCards entries={entries} items={items} />
 
       <div className="grid gap-6 lg:grid-cols-2">

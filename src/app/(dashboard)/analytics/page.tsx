@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useTransactionStore } from "@/store/transaction.store";
 import { useCategoryStore } from "@/store/category.store";
+import { useFinancialItemStore } from "@/store/financial-item.store";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { CategoryBreakdownChart } from "@/components/dashboard/CategoryBreakdown";
@@ -164,23 +165,26 @@ export default function AnalyticsPage() {
     fetchCategoryBreakdown,
   } = useTransactionStore();
   const { flatCategories, fetchCategories } = useCategoryStore();
+  const { items, fetchItems } = useFinancialItemStore();
 
   // Monthly data fetch
   useEffect(() => {
     if (viewMode !== "monthly") return;
     const { start, end } = getMonthDateRange(selectedYear, selectedMonth);
     fetchCategories();
+    fetchItems();
     fetchTransactions({ start_date: start, end_date: end });
     fetchCategoryBreakdown({ start_date: start, end_date: end });
-  }, [viewMode, selectedYear, selectedMonth, fetchTransactions, fetchCategories, fetchCategoryBreakdown]);
+  }, [viewMode, selectedYear, selectedMonth, fetchTransactions, fetchCategories, fetchCategoryBreakdown, fetchItems]);
 
   // Yearly data fetch
   useEffect(() => {
     if (viewMode !== "yearly") return;
     fetchCategories();
+    fetchItems();
     fetchTransactions({ start_date: `${selectedYear}-01-01`, end_date: `${selectedYear}-12-31` });
     fetchCategoryBreakdown({ start_date: `${selectedYear}-01-01`, end_date: `${selectedYear}-12-31` });
-  }, [viewMode, selectedYear, fetchTransactions, fetchCategories, fetchCategoryBreakdown]);
+  }, [viewMode, selectedYear, fetchTransactions, fetchCategories, fetchCategoryBreakdown, fetchItems]);
 
   const effectiveSelectedCategoryIds = useMemo(() => {
     const validCategoryIds = new Set(flatCategories.map((category) => category.id));
@@ -302,7 +306,7 @@ export default function AnalyticsPage() {
             {categoryFilterControls}
           </div>
 
-          <SummaryCards transactions={filteredTransactions} />
+          <SummaryCards transactions={filteredTransactions} items={items} />
           <TopParentExpenseCards data={filteredCategoryBreakdown} />
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -324,7 +328,7 @@ export default function AnalyticsPage() {
             {categoryFilterControls}
           </div>
 
-          <SummaryCards transactions={filteredTransactions} />
+          <SummaryCards transactions={filteredTransactions} items={items} />
           <TopParentExpenseCards data={filteredCategoryBreakdown} />
 
           <div className="grid gap-6 lg:grid-cols-2">
