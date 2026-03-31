@@ -18,7 +18,7 @@ import { FinancialItem } from "@/models/financial-item.model";
 import { FinancialItemForm } from "./FinancialItemForm";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-import { formatEmiDayLabel, getEffectiveSavingsRate, getLastEmiDate, getLoanOutstanding } from "@/lib/financial-items";
+import { formatEmiDayLabel, getEffectiveSavingsRate, getLastEmiDate, getLoanOutstanding, getPaidEmiCount } from "@/lib/financial-items";
 
 const typeIcons = {
   loan: Building2,
@@ -80,6 +80,10 @@ export function FinancialItemList({ items }: Props) {
             item.type === "loan" && item.meta.startDate && item.meta.emiDate
               ? getLastEmiDate(item.meta.startDate, Number(item.meta.emiDate), new Date(), Number(item.meta.tenure ?? 0) || undefined)
               : null;
+          const paidEmis =
+            item.type === "loan" && item.meta.startDate && item.meta.emiDate
+              ? getPaidEmiCount(item.meta.startDate, Number(item.meta.emiDate), new Date(), Number(item.meta.tenure ?? 0) || undefined)
+              : 0;
 
           return (
             <Card key={item.id} className="transition-shadow hover:shadow-md">
@@ -158,6 +162,12 @@ export function FinancialItemList({ items }: Props) {
                     <div className="flex justify-between">
                       <span>Outstanding (last EMI)</span>
                       <span className="font-medium text-foreground">{formatCurrency(loanOutstanding)}</span>
+                    </div>
+                  )}
+                  {item.type === "loan" && (
+                    <div className="flex justify-between">
+                      <span>Paid EMIs</span>
+                      <span className="font-medium text-foreground">{paidEmis}</span>
                     </div>
                   )}
                   {item.type === "loan" && lastEmiDate && (

@@ -6,6 +6,10 @@ function toUTCDate(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 export function getLastEmiDate(startDate: string, emiDate: number, asOf: Date = new Date(), tenureMonths?: number): Date | null {
   const anchor = toUTCDate(asOf);
   const dueDates = getDueDates(startDate, emiDate, tenureMonths);
@@ -74,16 +78,16 @@ export function calculateReducingBalanceOutstanding(
     const days = periodStart && periodEnd
       ? Math.max(1, Math.round((periodEnd.getTime() - periodStart.getTime()) / DAY_IN_MS))
       : 30;
-    const interest = balance * dailyRate * days;
-    const principalPaid = Math.max(emiAmount - interest, 0);
+    const interest = round2(balance * dailyRate * days);
+    const principalPaid = round2(Math.max(emiAmount - interest, 0));
     if (principalPaid === 0) break;
-    balance = Math.max(balance - principalPaid, 0);
+    balance = round2(Math.max(balance - principalPaid, 0));
     if (periodEnd) {
       periodStart = periodEnd;
     }
   }
 
-  return balance;
+  return round2(balance);
 }
 
 export function getLoanOutstanding(item: FinancialItem, asOf: Date = new Date()): number {
