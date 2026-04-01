@@ -21,7 +21,7 @@ This app uses **Supabase** (PostgreSQL + Auth + PostgREST) as its backend. Follo
 
 This creates:
 - `categories` table — with parent/child hierarchy support
-- `financial_items` table — loans, investments, assets
+- `financial_items` table — loans, investments, assets, credit cards
 - `transactions` table — all income/expense records
 - Row Level Security (RLS) policies — each user can only see/edit their own data
 - Indexes — for fast date and category queries
@@ -125,7 +125,7 @@ Supabase PostgREST API  ←→  PostgreSQL (with RLS)
 | `id` | UUID | Primary key |
 | `user_id` | UUID | References `auth.users` |
 | `name` | VARCHAR(200) | |
-| `type` | VARCHAR(20) | `loan`, `investment`, or `asset` |
+| `type` | VARCHAR(20) | `loan`, `investment`, `asset`, or `credit_card` |
 | `meta` | JSONB | Flexible metadata (interest rate, EMI, etc.) |
 | `created_at` | TIMESTAMPTZ | Auto-set |
 
@@ -145,6 +145,18 @@ Supabase PostgREST API  ←→  PostgreSQL (with RLS)
 ---
 
 ## Troubleshooting
+
+
+**"new row for relation "financial_items" violates check constraint "financial_items_type_check""** — Your project is using an older constraint that does not include `credit_card`. Run:
+
+```sql
+ALTER TABLE financial_items
+  DROP CONSTRAINT IF EXISTS financial_items_type_check;
+
+ALTER TABLE financial_items
+  ADD CONSTRAINT financial_items_type_check
+  CHECK (type IN ('loan', 'investment', 'asset', 'credit_card'));
+```
 
 **"Invalid API key"** — Check that your `.env.local` has the correct `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 

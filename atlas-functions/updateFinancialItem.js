@@ -45,7 +45,7 @@ exports = async function (request, response) {
     updateFields.name = name.trim();
   }
   if (type !== undefined) {
-    if (!["loan", "investment", "asset"].includes(type)) {
+    if (!["loan", "investment", "asset", "credit_card"].includes(type)) {
       response.setStatusCode(400);
       return response.setBody(JSON.stringify({ error: "Invalid type" }));
     }
