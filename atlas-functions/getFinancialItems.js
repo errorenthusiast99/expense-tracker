@@ -3,7 +3,7 @@
  * HTTP Method: GET
  * Endpoint: /financial-items
  *
- * Optional query: ?type=loan|investment|asset
+ * Optional query: ?type=loan|investment|asset|credit_card
  */
 
 exports = async function (request, response) {
@@ -24,7 +24,7 @@ exports = async function (request, response) {
   const query = { userId };
 
   const { type } = request.query;
-  if (type && ["loan", "investment", "asset"].includes(type)) {
+  if (type && ["loan", "investment", "asset", "credit_card"].includes(type)) {
     query.type = type;
   }
 
