@@ -9,6 +9,7 @@ import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
 import { useCategoryStore } from "@/store/category.store";
 import { useFinancialItemStore } from "@/store/financial-item.store";
+import { useTripStore } from "@/store/trip.store";
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default function DashboardLayout({
   const { isAuthenticated, isChecked, initialize } = useAuthStore();
   const { fetchCategories } = useCategoryStore();
   const { fetchItems } = useFinancialItemStore();
+  const { fetchTrips } = useTripStore();
   const [showTransactionForm, setShowTransactionForm] = useState(false);
 
   useEffect(() => {
@@ -28,7 +30,8 @@ export default function DashboardLayout({
   useEffect(() => {
     fetchCategories();
     fetchItems();
-  }, [fetchCategories, fetchItems]);
+    fetchTrips();
+  }, [fetchCategories, fetchItems, fetchTrips]);
 
   useEffect(() => {
     if (isChecked && !isAuthenticated) {

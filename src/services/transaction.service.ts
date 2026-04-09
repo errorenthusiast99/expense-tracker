@@ -22,6 +22,7 @@ export const TransactionService = {
         date: payload.date,
         note: payload.note ?? null,
         financial_item_id: payload.financial_item_id ?? null,
+        trip_id: payload.trip_id ?? null,
       })
       .select()
       .single();
@@ -40,6 +41,7 @@ export const TransactionService = {
     if (filters?.end_date) query = query.lte("date", filters.end_date);
     if (filters?.type) query = query.eq("type", filters.type);
     if (filters?.category_id) query = query.eq("category_id", filters.category_id);
+    if (filters?.trip_id) query = query.eq("trip_id", filters.trip_id);
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
@@ -57,6 +59,7 @@ export const TransactionService = {
         ...(payload.date !== undefined && { date: payload.date }),
         ...("note" in payload && { note: payload.note ?? null }),
         ...("financial_item_id" in payload && { financial_item_id: payload.financial_item_id ?? null }),
+        ...("trip_id" in payload && { trip_id: payload.trip_id ?? null }),
       })
       .eq("id", id)
       .select()
@@ -160,4 +163,3 @@ export const TransactionService = {
     return result;
   },
 } as const;
-

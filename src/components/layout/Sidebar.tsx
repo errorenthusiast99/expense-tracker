@@ -14,6 +14,7 @@ import {
   Sun,
   Repeat2,
   HandCoins,
+  Luggage,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/categories", label: "Categories", icon: Tag },
+  { href: "/trips", label: "Trips / Groups", icon: Luggage },
   { href: "/financial-items", label: "Financial Items", icon: Wallet },
   { href: "/lend-borrow", label: "Lend / Borrow", icon: HandCoins },
   { href: "/recurring", label: "Repetitive Things", icon: Repeat2 },

@@ -9,12 +9,14 @@ import { TransactionFiltersBar } from "@/components/transactions/TransactionFilt
 import { useTransactionStore } from "@/store/transaction.store";
 import { useCategoryStore } from "@/store/category.store";
 import { useFinancialItemStore } from "@/store/financial-item.store";
+import { useTripStore } from "@/store/trip.store";
 import { TransactionFilters } from "@/models/transaction.model";
 
 export default function TransactionsPage() {
   const { transactions, fetchTransactions, isLoading } = useTransactionStore();
   const { fetchCategories } = useCategoryStore();
   const { fetchItems } = useFinancialItemStore();
+  const { fetchTrips } = useTripStore();
   const [showForm, setShowForm] = useState(false);
   const [filters, setFilters] = useState<TransactionFilters>({});
 
@@ -22,7 +24,8 @@ export default function TransactionsPage() {
     fetchTransactions();
     fetchCategories();
     fetchItems();
-  }, [fetchTransactions, fetchCategories, fetchItems]);
+    fetchTrips();
+  }, [fetchTransactions, fetchCategories, fetchItems, fetchTrips]);
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters);

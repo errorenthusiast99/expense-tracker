@@ -10,6 +10,7 @@ export interface Transaction {
   date: string; // YYYY-MM-DD from PostgreSQL DATE column
   note?: string | null;
   financial_item_id?: string | null;
+  trip_id?: string | null;
   created_at: string;
 }
 
@@ -21,6 +22,7 @@ export interface CreateTransactionPayload {
   date: string;
   note?: string;
   financial_item_id?: string;
+  trip_id?: string;
 }
 
 export interface UpdateTransactionPayload {
@@ -31,6 +33,7 @@ export interface UpdateTransactionPayload {
   date?: string;
   note?: string;
   financial_item_id?: string;
+  trip_id?: string;
 }
 
 export interface TransactionDraft {
@@ -41,12 +44,14 @@ export interface TransactionDraft {
   date?: string;
   note?: string;
   financialItemId?: string;
+  tripId?: string;
 }
 
 export interface TransactionFilters {
   start_date?: string;
   end_date?: string;
   category_id?: string;
+  trip_id?: string;
   parent_category_id?: string;
   type?: TransactionType;
 }

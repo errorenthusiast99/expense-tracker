@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ import {
 import { useTransactionStore } from "@/store/transaction.store";
 import { useCategoryStore } from "@/store/category.store";
 import { useFinancialItemStore } from "@/store/financial-item.store";
+import { useTripStore } from "@/store/trip.store";
 import { useToast } from "@/components/ui/use-toast";
 import { Transaction, TransactionDraft } from "@/models/transaction.model";
 
@@ -38,6 +40,7 @@ const schema = z.object({
   date: z.string().min(1, "Date is required"),
   note: z.string().optional(),
   financialItemId: z.string().optional(),
+  tripId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -53,7 +56,9 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
   const { createTransaction, updateTransaction, isLoading } = useTransactionStore();
   const { flatCategories } = useCategoryStore();
   const { items } = useFinancialItemStore();
+  const { trips } = useTripStore();
   const { toast } = useToast();
+  const [categorySearch, setCategorySearch] = useState("");
 
   const {
     register,
@@ -75,6 +80,7 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
           : initialValues?.date ?? format(new Date(), "yyyy-MM-dd"),
       note: transaction?.note ?? initialValues?.note ?? "",
       financialItemId: transaction?.financial_item_id ?? initialValues?.financialItemId ?? "",
+      tripId: transaction?.trip_id ?? initialValues?.tripId ?? "",
     },
   });
 
@@ -89,12 +95,24 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
       date: initialValues?.date ?? format(new Date(), "yyyy-MM-dd"),
       note: initialValues?.note ?? "",
       financialItemId: initialValues?.financialItemId ?? "",
+      tripId: initialValues?.tripId ?? "",
     });
+    setCategorySearch("");
   }, [open, transaction, initialValues, reset]);
 
   const selectedType = watch("type");
   // Show only categories matching the transaction type
-  const filteredCategories = flatCategories.filter((c) => c.type === selectedType);
+  const filteredCategories = useMemo(
+    () => flatCategories.filter((c) => c.type === selectedType),
+    [flatCategories, selectedType]
+  );
+  const visibleCategories = useMemo(
+    () =>
+      filteredCategories.filter((cat) =>
+        cat.displayName.toLowerCase().includes(categorySearch.trim().toLowerCase())
+      ),
+    [filteredCategories, categorySearch]
+  );
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -106,6 +124,7 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
         date: data.date,
         note: data.note || undefined,
         financial_item_id: data.financialItemId || undefined,
+        trip_id: data.tripId || undefined,
       };
       if (transaction) {
         await updateTransaction(transaction.id, payload);
@@ -115,6 +134,7 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
         toast({ title: "Transaction added" });
       }
       reset();
+      setCategorySearch("");
       onClose();
     } catch {
       toast({ title: "Error", description: "Failed to save transaction", variant: "destructive" });
@@ -177,12 +197,21 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    {filteredCategories.length === 0 ? (
+                    <div className="p-2">
+                      <Input
+                        value={categorySearch}
+                        onChange={(event) => setCategorySearch(event.target.value)}
+                        placeholder="Search category"
+                      />
+                    </div>
+                    {visibleCategories.length === 0 ? (
                       <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                        No {selectedType} categories yet.<br />Create one in Categories.
+                        {filteredCategories.length === 0
+                          ? `No ${selectedType} categories yet.`
+                          : "No category matches your search."}
                       </div>
                     ) : (
-                      filteredCategories.map((cat) => (
+                      visibleCategories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.displayName}
                         </SelectItem>
@@ -197,8 +226,14 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
 
           {/* Date */}
           <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <Input id="date" type="date" {...register("date")} />
+            <Label>Date</Label>
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker value={field.value} onChange={(value) => field.onChange(value ?? "")} />
+              )}
+            />
             {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
           </div>
 
@@ -225,6 +260,35 @@ export function TransactionForm({ open, onClose, transaction, initialValues }: P
                       {items.map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           {item.name} ({item.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
+
+          {/* Trip / Group (optional) */}
+          {trips.length > 0 && (
+            <div className="space-y-2">
+              <Label>Trip / Group (optional)</Label>
+              <Controller
+                name="tripId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)}
+                    defaultValue={field.value || "__none__"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {trips.map((trip) => (
+                        <SelectItem key={trip.id} value={trip.id}>
+                          {trip.name} ({trip.kind})
                         </SelectItem>
                       ))}
                     </SelectContent>

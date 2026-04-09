@@ -43,6 +43,18 @@ CREATE TABLE IF NOT EXISTS repetitive_items (
   updated_at   TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+-- Trips / Groups (expense grouping buckets)
+CREATE TABLE IF NOT EXISTS trips (
+  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid() NOT NULL,
+  name        VARCHAR(140) NOT NULL,
+  kind        VARCHAR(10) NOT NULL DEFAULT 'trip' CHECK (kind IN ('trip', 'group')),
+  start_date  DATE,
+  end_date    DATE,
+  note        TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 -- Transactions
 CREATE TABLE IF NOT EXISTS transactions (
   id                 UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -54,6 +66,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   date               DATE NOT NULL,
   note               TEXT,
   financial_item_id  UUID REFERENCES financial_items(id) ON DELETE SET NULL,
+  trip_id            UUID REFERENCES trips(id) ON DELETE SET NULL,
   created_at         TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
@@ -78,6 +91,17 @@ CREATE TABLE IF NOT EXISTS lend_borrow_entries (
 -- ALTER TABLE financial_items ALTER COLUMN user_id SET DEFAULT auth.uid();
 -- ALTER TABLE repetitive_items ALTER COLUMN user_id SET DEFAULT auth.uid();
 -- ALTER TABLE transactions     ALTER COLUMN user_id SET DEFAULT auth.uid();
+-- ALTER TABLE transactions     ADD COLUMN IF NOT EXISTS trip_id UUID REFERENCES trips(id) ON DELETE SET NULL;
+-- CREATE TABLE IF NOT EXISTS trips (
+--   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+--   user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid() NOT NULL,
+--   name        VARCHAR(140) NOT NULL,
+--   kind        VARCHAR(10) NOT NULL DEFAULT 'trip' CHECK (kind IN ('trip', 'group')),
+--   start_date  DATE,
+--   end_date    DATE,
+--   note        TEXT,
+--   created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
+-- );
 --
 -- Add type column to existing categories table (defaults all existing rows to 'expense'):
 -- ALTER TABLE categories ADD COLUMN IF NOT EXISTS type VARCHAR(10) NOT NULL DEFAULT 'expense' CHECK (type IN ('expense', 'income'));
@@ -106,6 +130,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_user_date     ON transactions(user_i
 CREATE INDEX IF NOT EXISTS idx_transactions_user_type     ON transactions(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_category ON transactions(user_id, category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_created  ON transactions(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_trip     ON transactions(user_id, trip_id);
 CREATE INDEX IF NOT EXISTS idx_lend_borrow_user_date      ON lend_borrow_entries(user_id, date DESC);
 CREATE INDEX IF NOT EXISTS idx_lend_borrow_user_type      ON lend_borrow_entries(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_categories_user            ON categories(user_id);
@@ -115,6 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_financial_items_type       ON financial_items(use
 CREATE INDEX IF NOT EXISTS idx_repetitive_items_user      ON repetitive_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_repetitive_items_type      ON repetitive_items(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_repetitive_items_category  ON repetitive_items(user_id, category_id);
+CREATE INDEX IF NOT EXISTS idx_trips_user_created         ON trips(user_id, created_at DESC);
 
 -- ────────────────────────────────────────────────────────────
 -- ROW LEVEL SECURITY
@@ -125,6 +151,7 @@ ALTER TABLE financial_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE repetitive_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lend_borrow_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 
 -- Categories policies
 CREATE POLICY "categories_select" ON categories FOR SELECT USING (auth.uid() = user_id);
@@ -155,3 +182,9 @@ CREATE POLICY "lend_borrow_entries_select" ON lend_borrow_entries FOR SELECT USI
 CREATE POLICY "lend_borrow_entries_insert" ON lend_borrow_entries FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "lend_borrow_entries_update" ON lend_borrow_entries FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "lend_borrow_entries_delete" ON lend_borrow_entries FOR DELETE USING (auth.uid() = user_id);
+
+-- Trips / Groups policies
+CREATE POLICY "trips_select" ON trips FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "trips_insert" ON trips FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "trips_update" ON trips FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "trips_delete" ON trips FOR DELETE USING (auth.uid() = user_id);
