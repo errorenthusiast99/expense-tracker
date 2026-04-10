@@ -10,6 +10,7 @@ import {
   Plus,
   Repeat2,
   Tag,
+  Luggage,
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const primaryItems = [
 
 const moreItems = [
   { href: "/categories", label: "Categories", icon: Tag },
+  { href: "/trips", label: "Trips / Groups", icon: Luggage },
   { href: "/financial-items", label: "Financial Items", icon: Wallet },
   { href: "/lend-borrow", label: "Lend / Borrow", icon: HandCoins },
 ];

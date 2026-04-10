@@ -19,6 +19,7 @@ import { Transaction } from "@/models/transaction.model";
 import { TransactionForm } from "./TransactionForm";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { useTripStore } from "@/store/trip.store";
 
 interface Props {
   transactions: Transaction[];
@@ -27,12 +28,14 @@ interface Props {
 export function TransactionList({ transactions }: Props) {
   const { deleteTransaction } = useTransactionStore();
   const { categories } = useCategoryStore();
+  const { trips } = useTripStore();
   const { toast } = useToast();
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+  const tripMap = new Map(trips.map((trip) => [trip.id, trip.name]));
 
   const handleDelete = async () => {
     if (!deleting) return;
@@ -85,6 +88,11 @@ export function TransactionList({ transactions }: Props) {
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
+                    {tx.trip_id && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        {tripMap.get(tx.trip_id) ?? "Trip"}
+                      </Badge>
+                    )}
                     {tx.note && (
                       <p className="max-w-[180px] truncate text-xs text-muted-foreground italic">
                         · {tx.note}
