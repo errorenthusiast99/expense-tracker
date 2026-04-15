@@ -224,7 +224,7 @@ Get category-wise breakdown.
 
 ### GET /financial-items
 
-**Query Params:** `type` — `"loan" | "investment" | "asset"` (optional)
+**Query Params:** `type` — `"loan" | "investment" | "asset" | "credit_card"` (optional)
 
 **Response 200:**
 ```json
@@ -266,7 +266,7 @@ Get category-wise breakdown.
 
 ### PUT /financial-items/:id
 
-**Request Body:** Any subset of financial item fields.
+**Request Body:** Any subset of financial item fields. For `credit_card`, include `meta.totalLimit` (credit limit) and optionally `meta.outstandingBalance`.
 
 **Response 200:** Returns updated item.
 

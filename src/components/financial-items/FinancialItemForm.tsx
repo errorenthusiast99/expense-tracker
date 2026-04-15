@@ -44,6 +44,7 @@ const schema = z.object({
   bankName: z.string().optional(),
   cardType: z.string().optional(),
   outstandingBalance: numericField,
+  totalLimit: numericField,
   rewardsConversionRatio: numericField,
   savingsRate: numericField,
 });
@@ -64,6 +65,7 @@ type FormData = {
   bankName?: string;
   cardType?: string;
   outstandingBalance?: number;
+  totalLimit?: number;
   rewardsConversionRatio?: number;
   savingsRate?: number;
 };
@@ -103,6 +105,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       bankName: typeof item?.meta?.bankName === "string" ? item.meta.bankName : "",
       cardType: typeof item?.meta?.cardType === "string" ? item.meta.cardType : "",
       outstandingBalance: item?.meta?.outstandingBalance,
+      totalLimit: item?.meta?.totalLimit,
       rewardsConversionRatio: item?.meta?.rewardsConversionRatio,
       savingsRate: item?.meta?.savingsRate,
     },
@@ -127,6 +130,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       bankName,
       cardType,
       outstandingBalance,
+      totalLimit,
       rewardsConversionRatio,
       savingsRate,
     } = data;
@@ -149,6 +153,7 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
       ...(bankName && { bankName }),
       ...(cardType && { cardType }),
       ...(outstandingBalance !== undefined && { outstandingBalance }),
+      ...(totalLimit !== undefined && { totalLimit }),
       ...(rewardsConversionRatio !== undefined && { rewardsConversionRatio }),
       ...(savingsRate !== undefined && { savingsRate }),
     };
@@ -285,6 +290,10 @@ export function FinancialItemForm({ open, onClose, item }: Props) {
               <div className="space-y-2">
                 <Label htmlFor="outstandingBalance">Outstanding Balance (₹)</Label>
                 <Input id="outstandingBalance" type="number" placeholder="35000" {...register("outstandingBalance", { valueAsNumber: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="totalLimit">Total Limit (₹)</Label>
+                <Input id="totalLimit" type="number" placeholder="100000" {...register("totalLimit", { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rewardsConversionRatio">Rewards Conversion Ratio</Label>

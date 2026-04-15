@@ -14,6 +14,7 @@ export interface FinancialItemMeta {
   bankName?: string;
   cardType?: "visa" | "mastercard" | "rupay" | "amex" | string;
   outstandingBalance?: number;
+  totalLimit?: number;
   rewardsConversionRatio?: number;
   savingsRate?: number;
 

@@ -18,7 +18,7 @@ import { FinancialItem } from "@/models/financial-item.model";
 import { FinancialItemForm } from "./FinancialItemForm";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-import { formatEmiDayLabel, getEffectiveSavingsRate, getLastEmiDate, getLoanOutstanding, getPaidEmiCount } from "@/lib/financial-items";
+import { formatEmiDayLabel, getCreditUtilization, getEffectiveSavingsRate, getLastEmiDate, getLoanOutstanding, getPaidEmiCount } from "@/lib/financial-items";
 
 const typeIcons = {
   loan: Building2,
@@ -76,6 +76,7 @@ export function FinancialItemList({ items }: Props) {
           const Icon = typeIcons[item.type];
           const loanOutstanding = item.type === "loan" ? getLoanOutstanding(item) : 0;
           const effectiveSavingsRate = item.type === "credit_card" ? getEffectiveSavingsRate(item) : 0;
+          const creditUtilization = item.type === "credit_card" ? getCreditUtilization(item) : 0;
           const lastEmiDate =
             item.type === "loan" && item.meta.startDate && item.meta.emiDate
               ? getLastEmiDate(item.meta.startDate, Number(item.meta.emiDate), new Date(), Number(item.meta.tenure ?? 0) || undefined)
@@ -198,6 +199,18 @@ export function FinancialItemList({ items }: Props) {
                     <div className="flex justify-between">
                       <span>Outstanding</span>
                       <span className="font-medium text-foreground">{formatCurrency(Number(item.meta.outstandingBalance))}</span>
+                    </div>
+                  )}
+                  {item.meta.totalLimit !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Total Limit</span>
+                      <span className="font-medium text-foreground">{formatCurrency(Number(item.meta.totalLimit))}</span>
+                    </div>
+                  )}
+                  {item.type === "credit_card" && item.meta.totalLimit !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Utilization</span>
+                      <span className="font-medium text-foreground">{creditUtilization.toFixed(2)}%</span>
                     </div>
                   )}
                   {item.type === "credit_card" && (

@@ -108,6 +108,14 @@ export function getCreditCardOutstanding(item: FinancialItem): number {
   return Number(item.meta.outstandingBalance ?? 0);
 }
 
+export function getCreditUtilization(item: FinancialItem): number {
+  const outstanding = getCreditCardOutstanding(item);
+  const totalLimit = Number(item.meta.totalLimit ?? 0);
+
+  if (!Number.isFinite(totalLimit) || totalLimit <= 0) return 0;
+  return (outstanding / totalLimit) * 100;
+}
+
 export function getEffectiveSavingsRate(item: FinancialItem): number {
   const savingsRate = Number(item.meta.savingsRate ?? 0);
   const rewardsRatio = Number(item.meta.rewardsConversionRatio ?? 0);

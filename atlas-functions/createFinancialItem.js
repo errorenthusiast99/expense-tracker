@@ -32,9 +32,9 @@ exports = async function (request, response) {
     response.setStatusCode(400);
     return response.setBody(JSON.stringify({ error: "name is required" }));
   }
-  if (!["loan", "investment", "asset"].includes(type)) {
+  if (!["loan", "investment", "asset", "credit_card"].includes(type)) {
     response.setStatusCode(400);
-    return response.setBody(JSON.stringify({ error: "type must be 'loan', 'investment', or 'asset'" }));
+    return response.setBody(JSON.stringify({ error: "type must be 'loan', 'investment', 'asset', or 'credit_card'" }));
   }
 
   const db = context.services.get("mongodb-atlas").db("expense_tracker");
